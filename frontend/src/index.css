@@ -1,0 +1,22 @@
+/* Minimal global styles - Mantine handles most styling */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Semantic colors for solution quality */
+:root {
+  --color-fix:    #22c55e;
+  --color-float:  #f59e0b;
+  --color-single: #6b7280;
+  --color-live:   #3b82f6;
+}
+
+/* IBM Plex Mono for all monospace contexts */
+code, pre, kbd, .mantine-Code-root {
+  font-family: 'IBM Plex Mono', monospace !important;
+}

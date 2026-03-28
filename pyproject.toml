@@ -1,0 +1,49 @@
+[project]
+name = "mrtklib-web-ui"
+dynamic = ["version"]
+description = "Web UI for MRTKLIB command-line tools"
+readme = "README.md"
+authors = [
+    { name = "h-shiono", email = "hato.gnss@gmail.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-socketio>=5.11.0",
+    "python-multipart>=0.0.18",
+    "pydantic>=2.10.0",
+    "numpy>=1.26.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+qc = ["cssrlib>=1.2.1"]
+
+[project.scripts]
+mrtklib-web-ui = "mrtklib_web_ui:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.0",
+]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrtklib_web_ui"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/mrtklib_web_ui/_version.py"
