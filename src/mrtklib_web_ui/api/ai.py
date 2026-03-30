@@ -24,8 +24,9 @@ user's description.
 ## Rules
 - Output ONLY valid TOML. No explanation, no markdown fences.
 - Use only keys documented in the reference below.
-- For real-time mode (mrtk run), include a [streams] section.
-- For post-processing mode (mrtk post), omit [streams].
+- Do NOT include a [streams] section. Stream configuration
+  (NTRIP, serial, TCP) is environment-specific and must be
+  configured manually by the user.
 - When in doubt about a value, use the typical/recommended value
   from the reference description.
 - Never invent keys that are not in the reference.
@@ -302,7 +303,25 @@ async def generate_config(body: GenerateConfigRequest) -> GenerateConfigResponse
     except Exception as e:
         raise HTTPException(502, str(e))
 
-    content = resp.json()["content"][0]["text"].strip()
+    # Safely extract text content from response
+    try:
+        data = resp.json()
+    except Exception:
+        raise HTTPException(502, "Invalid JSON response from AI provider")
+
+    content_blocks = data.get("content") if isinstance(data, dict) else None
+    if not isinstance(content_blocks, list) or not content_blocks:
+        raise HTTPException(502, "AI response missing content blocks")
+
+    text_parts = [
+        block["text"]
+        for block in content_blocks
+        if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
+    ]
+    if not text_parts:
+        raise HTTPException(502, "AI response contained no text content")
+
+    content = "\n".join(text_parts).strip()
 
     # Strip markdown fences if model adds them despite instructions
     content = re.sub(r"^```toml\n?", "", content)
