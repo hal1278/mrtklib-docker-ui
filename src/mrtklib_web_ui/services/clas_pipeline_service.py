@@ -193,7 +193,7 @@ class ClasPipelineService:
         )
 
         relay_in = f"serial://{_dev_basename(config.input_device)}:{config.input_baud}#{preset.relay_input_format}"
-        relay_out = f"tcpsvr://:{config.bridge_port}#{preset.relay_input_format}"
+        relay_out = f"tcpsvr://:{config.bridge_port}"
         try:
             await process_manager.start(
                 command="str2str",
