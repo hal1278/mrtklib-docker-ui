@@ -26,6 +26,15 @@ class PipelineStartRequest(BaseModel):
     output_device: str = Field(examples=["/dev/ttyUSB1"])
     output_baud: int = Field(default=115200, gt=0)
     bridge_port: int = Field(default=DEFAULT_BRIDGE_PORT, gt=1024, lt=65536)
+    sbf_record_path: str | None = Field(
+        default=None,
+        description=(
+            "Optional path under /workspace to record the raw SBF stream "
+            "(useful for post-mortem analysis). mrtk relay's time tokens "
+            "(%Y, %m, %d, %h, %M, %S) are expanded at write time."
+        ),
+        examples=["/workspace/clas/sbf_%Y%m%d_%h%M%S.sbf"],
+    )
 
 
 class PipelineStatusResponse(BaseModel):
@@ -70,6 +79,7 @@ async def start_pipeline(req: PipelineStartRequest) -> PipelineStatusResponse:
         output_device=req.output_device,
         output_baud=req.output_baud,
         bridge_port=req.bridge_port,
+        sbf_record_path=req.sbf_record_path,
     )
     try:
         status = await clas_pipeline_service.start(config)

@@ -55,6 +55,9 @@ class PipelineState(str, Enum):
     ERROR = "error"
 
 
+_WORKSPACE_ROOT = Path("/workspace")
+
+
 @dataclass
 class PipelineConfig:
     """User-facing config — what the Wizard form posts."""
@@ -65,6 +68,35 @@ class PipelineConfig:
     output_device: str
     output_baud: int
     bridge_port: int = DEFAULT_BRIDGE_PORT
+    # Optional: tee the raw SBF stream into a file under /workspace.
+    # `mrtk relay` interprets %Y / %m / %d / %h / %M / %S in file paths.
+    sbf_record_path: str | None = None
+
+
+def _validate_sbf_record_path(raw: str) -> tuple[Path | None, str | None]:
+    """Resolve a user-supplied record path against /workspace.
+
+    Returns (parent_dir_to_create, error_message). The relay process is
+    what actually opens the file (so it can apply mrtk's own time-format
+    expansion); we only ensure the parent directory exists and that the
+    target lives under /workspace.
+    """
+    p = Path(raw)
+    if not p.is_absolute():
+        p = _WORKSPACE_ROOT / p
+    try:
+        # Resolve symlinks in the parent — the leaf may not exist yet
+        # (it's created by relay) and may contain mrtk's %Y / %h tokens.
+        parent = p.parent.resolve(strict=False)
+    except OSError as e:
+        return None, f"Invalid SBF record path: {e}"
+    if parent != _WORKSPACE_ROOT and _WORKSPACE_ROOT not in parent.parents:
+        return None, (
+            f"SBF record path must be under /workspace (got {raw}). "
+            "Anything written outside /workspace is lost when the "
+            "container restarts."
+        )
+    return parent, None
 
 
 @dataclass
@@ -193,11 +225,31 @@ class ClasPipelineService:
         )
 
         relay_in = f"serial://{_dev_basename(config.input_device)}:{config.input_baud}#{preset.relay_input_format}"
-        relay_out = f"tcpsvr://:{config.bridge_port}"
+        relay_out_tcp = f"tcpsvr://:{config.bridge_port}"
+        relay_args: list[str] = ["-in", relay_in, "-out", relay_out_tcp]
+        if config.sbf_record_path:
+            parent, err = _validate_sbf_record_path(config.sbf_record_path)
+            if err is not None:
+                self._status = PipelineStatus(
+                    state=PipelineState.ERROR, error_message=err
+                )
+                return self._status
+            assert parent is not None
+            try:
+                parent.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                self._status = PipelineStatus(
+                    state=PipelineState.ERROR,
+                    error_message=f"Cannot create SBF record directory {parent}: {e}",
+                )
+                return self._status
+            # `mrtk relay` expands its own time-format tokens (%Y, %h, ...).
+            relay_args += ["-out", f"file://{config.sbf_record_path}"]
+
         try:
             await process_manager.start(
                 command="str2str",
-                args=["-in", relay_in, "-out", relay_out],
+                args=relay_args,
                 process_id=RELAY_PID,
             )
         except Exception as e:

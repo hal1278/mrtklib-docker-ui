@@ -36,6 +36,7 @@ export interface PipelineStartRequest {
   output_device: string;
   output_baud: number;
   bridge_port?: number;
+  sbf_record_path?: string | null;
 }
 
 async function handle<T>(res: Response): Promise<T> {

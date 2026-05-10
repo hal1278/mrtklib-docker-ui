@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Code,
   Divider,
   Grid,
@@ -18,6 +19,7 @@ import {
   Stack,
   Tabs,
   Text,
+  TextInput,
   Title,
 } from '@mantine/core';
 import {
@@ -82,6 +84,10 @@ export function ClasPipelinePanel() {
   const [inputBaud, setInputBaud] = useState<number>(115200);
   const [outputBaud, setOutputBaud] = useState<number>(115200);
   const [bridgePort, setBridgePort] = useState<number>(9870);
+  const [recordSbf, setRecordSbf] = useState<boolean>(false);
+  const [sbfRecordPath, setSbfRecordPath] = useState<string>(
+    '/workspace/clas/sbf_%Y%m%d_%h%M%S.sbf',
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // --- Pipeline runtime state ---
@@ -232,6 +238,7 @@ export function ClasPipelinePanel() {
         output_device: outputDevice,
         output_baud: outputBaud,
         bridge_port: bridgePort,
+        sbf_record_path: recordSbf ? sbfRecordPath : null,
       });
       setPipelineStatus(status);
     } catch (e) {
@@ -372,6 +379,35 @@ export function ClasPipelinePanel() {
               disabled={isRunning}
             />
           </FormRow>
+
+          <Divider my={4} />
+
+          {/* SBF recording — tee the relay's SBF stream to a file */}
+          <FormRow label="Record raw SBF">
+            <Checkbox
+              size="sm"
+              checked={recordSbf}
+              onChange={(e) => setRecordSbf(e.currentTarget.checked)}
+              disabled={isRunning}
+              label="Save the SBF stream to /workspace for post-mortem analysis"
+            />
+          </FormRow>
+          {recordSbf && (
+            <FormRow label="SBF file path">
+              <TextInput
+                size="sm"
+                value={sbfRecordPath}
+                onChange={(e) => setSbfRecordPath(e.currentTarget.value)}
+                disabled={isRunning}
+                placeholder="/workspace/clas/sbf_%Y%m%d_%h%M%S.sbf"
+                description="mrtk relay expands %Y %m %d %h %M %S at write time."
+                styles={{
+                  input: { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: '11px' },
+                  description: { fontSize: '10px' },
+                }}
+              />
+            </FormRow>
+          )}
 
           {/* Advanced */}
           <Anchor
