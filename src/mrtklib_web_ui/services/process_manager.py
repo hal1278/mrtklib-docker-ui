@@ -54,6 +54,7 @@ class ProcessManager:
             "convbin": "convert",
             "rnx2rtkp": "post",
             "rtkrcv": "run",
+            "cssr2rtcm3": "cssr2rtcm3",
         }
     )
 
