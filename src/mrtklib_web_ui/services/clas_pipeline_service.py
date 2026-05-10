@@ -294,10 +294,17 @@ class ClasPipelineService:
 
         cssr_in = f"sbf://tcpcli://localhost:{config.bridge_port}"
         cssr_out = f"serial://{_dev_basename(config.output_device)}:{config.output_baud}"
+        cssr_args: list[str] = []
+        # Pass the per-receiver TOML config (signal_remap + CLAS grid/BLQ
+        # paths). Without it the OSR generator can't bootstrap a grid
+        # network and every epoch logs "Skipped: noosr=N".
+        if Path(preset.cssr2rtcm3_config_path).is_file():
+            cssr_args += ["-k", preset.cssr2rtcm3_config_path]
+        cssr_args += ["-in", cssr_in, "-out", cssr_out]
         try:
             await process_manager.start(
                 command="cssr2rtcm3",
-                args=["-in", cssr_in, "-out", cssr_out],
+                args=cssr_args,
                 process_id=CSSR_PID,
             )
         except Exception as e:
