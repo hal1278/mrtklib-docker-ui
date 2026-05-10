@@ -269,48 +269,88 @@ class ProcessManager:
         info = self._process_info.get(process_id)
         return info.state if info else ProcessState.IDLE
 
-    async def _read_stderr(self, process_id: str, process: Process) -> None:
-        """Read stderr stream and broadcast lines.
+    # Cap a single broadcast line at 8 KiB so a runaway upstream (e.g. a
+    # cssr2rtcm3 dump or accidentally-printed binary buffer) cannot blow
+    # up the WebSocket payload or the browser console. Beyond this we
+    # truncate with a marker; the read loop itself keeps going.
+    _MAX_BROADCAST_LINE = 8 * 1024
+    # Hard cap on the partial-line buffer. If the upstream produces no
+    # newline at all for this many bytes, we flush what we have as one
+    # truncated line and reset, instead of growing without bound.
+    _MAX_LINE_BUFFER = 1 * 1024 * 1024
 
-        str2str writes its logs to stderr.
+    async def _read_stderr(self, process_id: str, process: Process) -> None:
+        """Stream stderr to broadcast_log, line by line.
+
+        Reads in chunks instead of asyncio.StreamReader.readline() so we
+        do not crash with `Separator is not found, and chunk exceed the
+        limit` when a single log line is longer than the default 64 KiB
+        buffer (e.g. cssr2rtcm3's `=== End Dump ===` block can push past
+        that). str2str / mrtk relay write their logs to stderr.
         """
         if process.stderr is None:
             return
-
-        try:
-            while True:
-                line = await process.stderr.readline()
-                if not line:
-                    break
-
-                decoded = line.decode("utf-8", errors="replace").rstrip()
-                if decoded:
-                    await self._broadcast_log(process_id, decoded)
-
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            await self._broadcast_log(process_id, f"[ERROR] Log read error: {e}")
+        await self._pump_stream(process_id, process.stderr, prefix="")
 
     async def _read_stdout(self, process_id: str, process: Process) -> None:
-        """Read stdout stream and broadcast lines."""
+        """Stream stdout to broadcast_log with an [OUT] prefix."""
         if process.stdout is None:
             return
+        await self._pump_stream(process_id, process.stdout, prefix="[OUT] ")
 
+    async def _pump_stream(
+        self,
+        process_id: str,
+        stream: asyncio.StreamReader,
+        prefix: str,
+    ) -> None:
+        """Chunk-based line splitter — survives lines of any length."""
+        buf = bytearray()
         try:
             while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-
-                decoded = line.decode("utf-8", errors="replace").rstrip()
-                if decoded:
-                    await self._broadcast_log(process_id, f"[OUT] {decoded}")
-
+                chunk = await stream.read(8192)
+                if not chunk:
+                    if buf:
+                        await self._emit_line(process_id, bytes(buf), prefix)
+                        buf.clear()
+                    return
+                buf.extend(chunk)
+                while True:
+                    nl = buf.find(b"\n")
+                    if nl < 0:
+                        if len(buf) > self._MAX_LINE_BUFFER:
+                            await self._emit_line(
+                                process_id, bytes(buf), prefix, truncated=True
+                            )
+                            buf.clear()
+                        break
+                    line = bytes(buf[:nl])
+                    del buf[: nl + 1]
+                    await self._emit_line(process_id, line, prefix)
         except asyncio.CancelledError:
-            pass
-        except Exception:
-            pass
+            return
+        except Exception as e:
+            # Unexpected I/O failure — surface once, then stop reading
+            # this stream rather than spamming the same error.
+            await self._broadcast_log(
+                process_id, f"[ERROR] Log read error: {e}"
+            )
+
+    async def _emit_line(
+        self,
+        process_id: str,
+        raw: bytes,
+        prefix: str,
+        truncated: bool = False,
+    ) -> None:
+        decoded = raw.decode("utf-8", errors="replace").rstrip("\r")
+        if not decoded and not truncated:
+            return
+        if len(decoded) > self._MAX_BROADCAST_LINE:
+            decoded = decoded[: self._MAX_BROADCAST_LINE] + " …[truncated]"
+        elif truncated:
+            decoded = decoded + " …[no newline within 1 MiB; flushed]"
+        await self._broadcast_log(process_id, f"{prefix}{decoded}")
 
     async def _broadcast_log(self, process_id: str, message: str) -> None:
         """Broadcast a log message (with credentials masked)."""
