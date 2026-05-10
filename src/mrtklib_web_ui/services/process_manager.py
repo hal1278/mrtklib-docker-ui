@@ -259,6 +259,16 @@ class ProcessManager:
         """Get all process infos."""
         return list(self._process_info.values())
 
+    def peek_state(self, process_id: str) -> ProcessState:
+        """Synchronous, lock-free read of a process's last-known state.
+
+        Returns ProcessState.IDLE for unknown IDs. Use get_status() when
+        you want the live subprocess return-code refresh; this helper is
+        for callers that just need the cached state in a sync context.
+        """
+        info = self._process_info.get(process_id)
+        return info.state if info else ProcessState.IDLE
+
     async def _read_stderr(self, process_id: str, process: Process) -> None:
         """Read stderr stream and broadcast lines.
 

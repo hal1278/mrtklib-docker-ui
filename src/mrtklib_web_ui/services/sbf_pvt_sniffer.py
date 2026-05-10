@@ -173,7 +173,8 @@ class SbfStreamParser:
         if lat_rad <= -2.0e10 or lon_rad <= -2.0e10 or hgt <= -2.0e10:
             return None
         ns = p[66] if len(p) > 66 else 0
-        age_raw = struct.unpack_from("<H", p, 70)[0] if len(p) > 72 else 0xFFFF
+        # `unpack_from('<H', p, 70)` reads bytes 70..72, so we need len(p) >= 72.
+        age_raw = struct.unpack_from("<H", p, 70)[0] if len(p) >= 72 else 0xFFFF
         age = age_raw * 0.01 if age_raw != 0xFFFF else -1.0
         return PvtFix(
             time_gpst=_GPS_EPOCH + timedelta(weeks=wn, milliseconds=tow_ms),

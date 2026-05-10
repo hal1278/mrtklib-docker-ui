@@ -151,15 +151,22 @@ def _is_stream_url(s: str) -> bool:
     return bool(_STREAM_SCHEME_RE.match(s))
 
 
-def _device_accessible(path: str) -> tuple[bool, str | None]:
+def _device_accessible(path: str, allow_url: bool = False) -> tuple[bool, str | None]:
     """Return (ok, error_message). Distinguishes 'missing' from 'no permission'.
 
-    Stream URLs (tcpcli://, ntripcli://, ...) are passed straight through to
-    `mrtk relay`, so we skip the filesystem check for them — relay reports
-    the connection error itself when it fails to dial.
+    Stream URLs (tcpcli://, ntripcli://, ...) are accepted only when
+    `allow_url=True` — used for the input side, where mrtk relay can dial
+    a remote SBF source for bench testing. The output side wraps the
+    value as `serial://<basename>:<baud>`, so a URL there silently
+    produces a malformed URI; reject it up front with a clear error.
     """
     if _is_stream_url(path):
-        return True, None
+        if allow_url:
+            return True, None
+        return False, (
+            f"Output must be a serial device path, not a stream URL ({path}). "
+            "Stream URLs are accepted only as input for bench testing."
+        )
     p = Path(path)
     if not p.exists():
         return False, (
@@ -212,8 +219,7 @@ class ClasPipelineService:
 
     @staticmethod
     def _status_for(pid: str) -> str:
-        info = process_manager._process_info.get(pid)
-        return info.state.value if info else "idle"
+        return process_manager.peek_state(pid).value
 
     async def start(self, config: PipelineConfig) -> PipelineStatus:
         if self._status.state in (PipelineState.STARTING, PipelineState.RUNNING):
@@ -223,13 +229,18 @@ class ClasPipelineService:
         if preset is None:
             raise ValueError(f"Unknown receiver preset: {config.receiver_id}")
 
-        for path in (config.input_device, config.output_device):
-            ok, err = _device_accessible(path)
-            if not ok:
-                self._status = PipelineStatus(
-                    state=PipelineState.ERROR, error_message=err
-                )
-                return self._status
+        ok, err = _device_accessible(config.input_device, allow_url=True)
+        if not ok:
+            self._status = PipelineStatus(
+                state=PipelineState.ERROR, error_message=err
+            )
+            return self._status
+        ok, err = _device_accessible(config.output_device, allow_url=False)
+        if not ok:
+            self._status = PipelineStatus(
+                state=PipelineState.ERROR, error_message=err
+            )
+            return self._status
 
         if config.input_device == config.output_device:
             self._status = PipelineStatus(
@@ -377,10 +388,11 @@ class ClasPipelineService:
 
     @staticmethod
     async def _stop_process(pid: str) -> None:
-        if pid not in process_manager._processes:
-            return
         try:
             await process_manager.stop(pid, timeout=3.0)
+        except ValueError:
+            # Already stopped or never started — nothing to do.
+            return
         except Exception:
             pass
 

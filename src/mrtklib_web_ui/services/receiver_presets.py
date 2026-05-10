@@ -6,7 +6,9 @@ that `mrtk relay` needs, and the wire-format the receiver expects on the
 correction-input port.
 
 The dict is the source of truth for the UI's receiver dropdown. Adding a
-new receiver = one entry here + one section in docs/clas-pipeline.md.
+new receiver = one entry here + a bundled cssr2rtcm3 TOML config under
+docker/clas-presets/ (the path is set on the preset's
+cssr2rtcm3_config_path field).
 """
 
 from __future__ import annotations
