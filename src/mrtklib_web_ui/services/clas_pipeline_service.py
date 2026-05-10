@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -137,8 +138,28 @@ def list_serial_ports() -> list[SerialPort]:
     return out
 
 
+_STREAM_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+]*://", re.IGNORECASE)
+
+
+def _is_stream_url(s: str) -> bool:
+    """True for `tcpcli://...`, `ntripcli://...`, `file://...`, etc.
+
+    Used to let power users feed an existing TCP/NTRIP SBF stream into the
+    pipeline for bench-testing the cssr2rtcm3 stage without needing an
+    L6-capable receiver wired to the SBC.
+    """
+    return bool(_STREAM_SCHEME_RE.match(s))
+
+
 def _device_accessible(path: str) -> tuple[bool, str | None]:
-    """Return (ok, error_message). Distinguishes 'missing' from 'no permission'."""
+    """Return (ok, error_message). Distinguishes 'missing' from 'no permission'.
+
+    Stream URLs (tcpcli://, ntripcli://, ...) are passed straight through to
+    `mrtk relay`, so we skip the filesystem check for them — relay reports
+    the connection error itself when it fails to dial.
+    """
+    if _is_stream_url(path):
+        return True, None
     p = Path(path)
     if not p.exists():
         return False, (
@@ -224,7 +245,19 @@ class ClasPipelineService:
             bridge_port=config.bridge_port,
         )
 
-        relay_in = f"serial://{_dev_basename(config.input_device)}:{config.input_baud}#{preset.relay_input_format}"
+        if _is_stream_url(config.input_device):
+            # Pass URL straight through. Append the format tag if the user
+            # didn't supply one — `mrtk relay` needs it to know what's coming.
+            relay_in = (
+                config.input_device
+                if "#" in config.input_device
+                else f"{config.input_device}#{preset.relay_input_format}"
+            )
+        else:
+            relay_in = (
+                f"serial://{_dev_basename(config.input_device)}:"
+                f"{config.input_baud}#{preset.relay_input_format}"
+            )
         relay_out_tcp = f"tcpsvr://:{config.bridge_port}"
         relay_args: list[str] = ["-in", relay_in, "-out", relay_out_tcp]
         if config.sbf_record_path:

@@ -331,7 +331,7 @@ export function ClasPipelinePanel() {
                   value={inputDevice}
                   onChange={setInputDevice}
                   data={portOptions}
-                  placeholder="/dev/ttyUSB0"
+                  placeholder="/dev/ttyUSB0  or  tcpcli://host:9000  or  ntripcli://user:pass@host:2101/MOUNT"
                   disabled={isRunning}
                 />
               </Box>
