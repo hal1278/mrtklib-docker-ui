@@ -276,8 +276,10 @@ export function ClasPipelinePanel() {
   const selectedReceiver = receivers.find((r) => r.id === receiverId);
 
   return (
-    <Stack gap="md">
-      <Card withBorder p="md">
+    <Grid gutter="md" align="stretch">
+      {/* Left column: form + status + actions */}
+      <Grid.Col span={{ base: 12, md: 5 }}>
+      <Card withBorder p="md" h="100%">
         <Stack gap="xs">
           <Title order={5}>CLAS Pipeline</Title>
           <Text size="xs" c="dimmed">
@@ -460,65 +462,62 @@ export function ClasPipelinePanel() {
           )}
         </Stack>
       </Card>
+      </Grid.Col>
 
-      {/* Live monitoring */}
-      <Grid>
-        <Grid.Col span={{ base: 12, md: 7 }}>
-          <Stack gap="md">
-            <ClasFlowMeter stats={flowStats} />
-            <Card withBorder p="sm">
-              <Tabs defaultValue="relay">
-                <Tabs.List>
-                  <Tabs.Tab value="relay">mrtk relay</Tabs.Tab>
-                  <Tabs.Tab value="cssr">mrtk cssr2rtcm3</Tabs.Tab>
-                </Tabs.List>
-                <Tabs.Panel value="relay" pt="xs">
-                  <ScrollArea h={260} viewportRef={relayScrollRef}>
-                    <Code
-                      block
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        fontSize: '11px',
-                        fontFamily: 'var(--mantine-font-family-monospace)',
-                      }}
-                    >
-                      {relayLog.length === 0
-                        ? 'Waiting for relay output…'
-                        : relayLog.join('\n')}
-                    </Code>
-                  </ScrollArea>
-                </Tabs.Panel>
-                <Tabs.Panel value="cssr" pt="xs">
-                  <ScrollArea h={260} viewportRef={cssrScrollRef}>
-                    <Code
-                      block
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        fontSize: '11px',
-                        fontFamily: 'var(--mantine-font-family-monospace)',
-                      }}
-                    >
-                      {cssrLog.length === 0
-                        ? 'Waiting for cssr2rtcm3 output…'
-                        : cssrLog.join('\n')}
-                    </Code>
-                  </ScrollArea>
-                </Tabs.Panel>
-              </Tabs>
-            </Card>
+      {/* Right column: live monitoring (flow meter, scatter, logs) */}
+      <Grid.Col span={{ base: 12, md: 7 }}>
+      <Stack gap="md" h="100%" style={{ minHeight: 0 }}>
+        <ClasFlowMeter stats={flowStats} />
+        <Card withBorder p="sm">
+          <Stack gap="xs">
+            <Text size="sm" fw={600}>
+              Position (from SBF PVTGeodetic)
+            </Text>
+            <PositionScatter points={points} />
           </Stack>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <Card withBorder p="sm">
-            <Stack gap="xs">
-              <Text size="sm" fw={600}>
-                Position (from SBF PVTGeodetic)
-              </Text>
-              <PositionScatter points={points} />
-            </Stack>
-          </Card>
-        </Grid.Col>
-      </Grid>
-    </Stack>
+        </Card>
+        <Card withBorder p="sm" style={{ flex: 1, minHeight: 0 }}>
+          <Tabs defaultValue="relay">
+            <Tabs.List>
+              <Tabs.Tab value="relay">mrtk relay</Tabs.Tab>
+              <Tabs.Tab value="cssr">mrtk cssr2rtcm3</Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="relay" pt="xs">
+              <ScrollArea h={260} viewportRef={relayScrollRef}>
+                <Code
+                  block
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '11px',
+                    fontFamily: 'var(--mantine-font-family-monospace)',
+                  }}
+                >
+                  {relayLog.length === 0
+                    ? 'Waiting for relay output…'
+                    : relayLog.join('\n')}
+                </Code>
+              </ScrollArea>
+            </Tabs.Panel>
+            <Tabs.Panel value="cssr" pt="xs">
+              <ScrollArea h={260} viewportRef={cssrScrollRef}>
+                <Code
+                  block
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '11px',
+                    fontFamily: 'var(--mantine-font-family-monospace)',
+                  }}
+                >
+                  {cssrLog.length === 0
+                    ? 'Waiting for cssr2rtcm3 output…'
+                    : cssrLog.join('\n')}
+                </Code>
+              </ScrollArea>
+            </Tabs.Panel>
+          </Tabs>
+        </Card>
+      </Stack>
+      </Grid.Col>
+    </Grid>
   );
 }
