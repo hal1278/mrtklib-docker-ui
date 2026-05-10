@@ -1,0 +1,49 @@
+# mrtk cssr2rtcm3 config for Septentrio mosaic-G5 / mosaic-CLAS.
+# Adapted from MRTKLIB conf/cssr2rtcm3.toml — file paths point at
+# bundled correction files baked into the docker image, so the
+# pipeline runs without the user having to wire `-grid` etc.
+#
+# This file is bundled under /opt/mrtklib/clas-presets/ and passed to
+# `mrtk cssr2rtcm3` via `-k` by the CLAS pipeline service.
+
+[positioning]
+mode = "ssr2osr"
+elevation_mask = 0.0
+satellite_ephemeris = "brdc+ssrapc"
+systems = ["GPS", "Galileo", "QZSS"]
+
+[positioning.corrections]
+tidal_correction = "solid+otl-clasgrid+pole"
+phase_windup = "on"
+exclude_eclipse = true
+receiver_antenna = false
+
+[positioning.atmosphere]
+ionosphere = "est-adaptive"
+troposphere = "off"
+
+[files]
+# Bundled in stage 1 of docker/Dockerfile from the claslib testdata.
+cssr_grid    = "/opt/mrtklib/corrections/clas/clas_grid.def"
+ocean_loading = "/opt/mrtklib/corrections/clas/clas_grid.blq"
+satellite_atx = "/opt/mrtklib/corrections/clas/igs14_L5copy.atx"
+eop          = "/opt/mrtklib/corrections/clas/igu00p01.erp"
+isb_table    = "/opt/mrtklib/corrections/clas/isb.tbl"
+phase_cycle  = "/opt/mrtklib/corrections/clas/l2csft.tbl"
+
+# CLAS code → Septentrio mosaic-G5/CLAS RINEX obs code remap.
+# Without this the cssr2rtcm3 OSR generator cannot match the receiver's
+# reported observations and emits "Skipped: noosr=..." for every epoch.
+[signal_remap]
+G2X = "2W"   # GPS L2C(M+L) → L2W
+J2X = "2L"   # QZS L2C(M+L) → L2L
+
+[cssr2rtcm3]
+# MSM message type: 4 (compact), 5 (+Doppler), 7 (full + Doppler)
+msm_type = 7
+systems  = ["GPS", "Galileo", "QZSS"]
+# Fixed SNR for VRS pseudo-observations — mosaic-CLAS reference value.
+snr_fixed = 50.0
+# L6D auto-selection minimum elevation (degrees). 10 deg keeps GEO
+# satellites (PRN >= 199) eligible, which is what mosaic-CLAS sees.
+l6d_elmin = 10.0

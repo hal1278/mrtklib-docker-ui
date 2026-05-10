@@ -100,6 +100,12 @@ RUN chmod -R 444 /opt/mrtklib/corrections/ && \
               /opt/mrtklib/corrections/clas/ \
               /opt/mrtklib/corrections/madoca/
 
+# CLAS pipeline per-receiver cssr2rtcm3 configs (TOML).
+# Passed to `mrtk cssr2rtcm3 -k <file>` by clas_pipeline_service.
+COPY docker/clas-presets/ /opt/mrtklib/clas-presets/
+RUN chmod -R 444 /opt/mrtklib/clas-presets/ && \
+    chmod 555 /opt/mrtklib/clas-presets/
+
 # Verify mrtk is installed
 RUN mrtk --version
 

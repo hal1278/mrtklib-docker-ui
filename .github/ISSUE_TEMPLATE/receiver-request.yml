@@ -1,0 +1,99 @@
+name: CLAS Pipeline — receiver support request
+description: Request a new GNSS receiver preset for the CLAS Pipeline tab
+title: "[Receiver] <vendor> <model>"
+labels: ["enhancement", "module:clas-pipeline", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request that a new GNSS receiver be added to
+        the CLAS Pipeline picker. To add the receiver we need:
+
+        1. The receiver outputs **raw SBF** (or a format `mrtk relay` can
+           tag) on a serial port, including the QZSS L6 CLAS message.
+        2. The receiver **accepts RTCM3** (typically MSM4/MSM5 + 1005/1006)
+           on a separate serial port and runs an internal RTK/VRS-RTK
+           engine that consumes it.
+
+        If your receiver does not meet both requirements, the CLAS Pipeline
+        UI will not work end-to-end as designed — please open a regular
+        feature request instead.
+
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      placeholder: e.g. u-blox, Bynav, Quectel, NovAtel
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      placeholder: e.g. X20-P, NovAtel OEM7
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version tested (if any)
+      placeholder: e.g. P3, FW 1.30.5
+    validations:
+      required: false
+
+  - type: textarea
+    id: input_format
+    attributes:
+      label: Input port format (raw → mrtk relay)
+      description: |
+        Which raw format does the receiver emit? `mrtk relay -in
+        serial://...#<format>` needs a tag the parser recognises.
+      placeholder: |
+        SBF, UBX, NovAtel OEM4 binary, BINEX, ...
+        (CLAS L6 must be wrapped inside this stream)
+    validations:
+      required: true
+
+  - type: textarea
+    id: output_format
+    attributes:
+      label: Output port (RTCM3 in)
+      description: |
+        Which RTCM3 messages does the receiver need on its correction
+        input port to do VRS-RTK? Default cssr2rtcm3 output is MSM4 + 1005.
+      placeholder: |
+        MSM4 / MSM5 / 1005 / 1006 / 1019 / 1020 / 1042 / 1044 / 1045 / 1046
+    validations:
+      required: true
+
+  - type: textarea
+    id: defaults
+    attributes:
+      label: Default baud rates and notes
+      placeholder: |
+        - Default input baud: 460800
+        - Default output baud: 115200
+        - Notes: requires "OutputCLAS L6" enabled in receiver config tool
+    validations:
+      required: false
+
+  - type: textarea
+    id: docs
+    attributes:
+      label: Public documentation links
+      description: Receiver datasheet, command reference, or vendor app note.
+      placeholder: https://...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I have hardware available and can help test a draft preset.
+          required: false
+        - label: This receiver is broadly available outside its home market.
+          required: false

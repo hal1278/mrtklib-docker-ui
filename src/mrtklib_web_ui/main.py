@@ -15,8 +15,11 @@ try:
 except importlib.metadata.PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
-from mrtklib_web_ui.api import files, process, config, mrtk_relay, mrtk_post, mrtk_run, obs_qc, presets, downloader, convert, ai
-from mrtklib_web_ui.services import process_manager, ws_manager
+from mrtklib_web_ui.api import (
+    files, process, config, mrtk_relay, mrtk_post, mrtk_run, obs_qc,
+    presets, downloader, convert, ai, clas_pipeline,
+)
+from mrtklib_web_ui.services import clas_pipeline_service, process_manager, ws_manager
 
 # Static files directory (set in Docker build)
 STATIC_DIR = Path("/app/static")
@@ -27,11 +30,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     # Startup: Wire up process manager to WebSocket manager
     process_manager.set_log_callback(ws_manager.broadcast_log)
+
+    async def _on_clas_pvt(fix) -> None:
+        await ws_manager.broadcast({"type": "clas_pvt", **fix.to_json()})
+
+    async def _on_clas_flow(stats) -> None:
+        await ws_manager.broadcast({"type": "clas_flow", **stats.to_json()})
+
+    clas_pipeline_service.set_callbacks(_on_clas_pvt, _on_clas_flow)
+
     # Setup .netrc from environment variables if not already mounted
     from mrtklib_web_ui.services.credentials import setup_netrc_from_env
     setup_netrc_from_env()
     yield
-    # Shutdown: Stop all running processes
+    # Shutdown: tear down the CLAS pipeline first so its child processes
+    # get a clean stop signal before we kill them in the loop below.
+    try:
+        await clas_pipeline_service.stop()
+    except Exception:
+        pass
     for proc_info in process_manager.get_all_processes():
         if proc_info.state.value == "running":
             try:
@@ -68,6 +85,7 @@ app.include_router(presets.router, prefix="/api/presets", tags=["presets"])
 app.include_router(downloader.router, prefix="/api/downloader", tags=["downloader"])
 app.include_router(convert.router, prefix="/api/convert", tags=["convert"])
 app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
+app.include_router(clas_pipeline.router, prefix="/api/clas-pipeline", tags=["clas-pipeline"])
 
 
 @app.get("/api/health")

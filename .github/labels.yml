@@ -64,6 +64,9 @@
 - name: "module:docs"
   color: "5319e7"
   description: "README, Docker Hub Overview, in-repo docs, CLAUDE.md"
+- name: "module:clas-pipeline"
+  color: "5319e7"
+  description: "CLAS Pipeline (mrtk relay + cssr2rtcm3, receiver presets)"
 
 # -----------------------------------------------------------------------------
 # area:* — which UI tab or feature surface is affected

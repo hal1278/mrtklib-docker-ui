@@ -9,7 +9,7 @@ GNSS positioning capabilities. No compilation required — just
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![React](https://img.shields.io/badge/react-18+-blue.svg)
-![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.6.4-green.svg)
+![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.6.5-green.svg)
 
 > **Status**: v0.1.0-alpha — core features are functional.
 > Known limitations are listed in [Known Issues](#known-issues).
@@ -41,6 +41,16 @@ GNSS positioning capabilities. No compilation required — just
 ### Stream Relay (`mrtk relay`)
 - Multi-stream configuration (up to 4 simultaneous streams)
 - Per-stream Start / Stop control with live console output
+
+### CLAS Pipeline (`mrtk relay` + `mrtk cssr2rtcm3`)
+- One-form Wizard for the SBC + receiver + CLAS workflow added in
+  MRTKLIB v0.6.5
+- Pipes Septentrio SBF (with QZSS L6 CLAS) → cssr2rtcm3 → RTCM3 →
+  back to the receiver, which runs VRS-RTK on its own engine
+- Live throughput meter, position scatter (parsed from SBF
+  PVTGeodetic), and split logs for both child processes
+- Currently ships with a mosaic-G5 preset; request more receivers
+  via the GitHub Issue template
 
 ### RINEX Conversion (`mrtk convert`)
 - Supports all convbin formats: u-blox, Septentrio SBF,
@@ -160,16 +170,37 @@ against a local MRTKLIB checkout, or develop the Web UI itself.
 DATA_DIR=/path/to/your/gnss-data
 ```
 
-### Serial Device Passthrough (Monitor tab)
+### Serial Device Passthrough (Monitor tab and CLAS Pipeline)
 
 To connect to a GNSS receiver via serial port, add the device
 to `docker-compose.yml`:
 ```yaml
 services:
-  app:
+  mrtklib-web-ui:
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
+    volumes:
+      # Optional: mount /dev/serial so the UI can list ports by descriptor
+      # name (e.g. "usb-Septentrio_Mosaic-G5_..." instead of "ttyUSB0").
+      - /dev/serial:/dev/serial:ro
 ```
+
+The CLAS Pipeline tab needs **two** serial devices (one for SBF
+input, one for RTCM3 output). Set `CLAS_INPUT_DEVICE` and
+`CLAS_OUTPUT_DEVICE` in `.env`, then uncomment the matching
+`devices:` block in `docker-compose.yml`.
+
+#### macOS host
+
+Docker Desktop on macOS runs Linux containers in a hidden VM, so
+USB-serial devices on the Mac (`/dev/cu.usbmodem*`) are **not**
+visible to the container by default. Use one of:
+
+- Run on the SBC itself (recommended for production CLAS use).
+- Forward over the network with USB/IP or a TCP↔serial bridge
+  (e.g. `socat`, `ser2net`) and pick TCP in the UI instead of
+  serial.
+- Use a Linux host or VM with native USB device access.
 
 ### Credentials (Data Downloader)
 
