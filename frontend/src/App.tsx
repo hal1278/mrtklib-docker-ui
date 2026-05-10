@@ -40,6 +40,7 @@ import { ResultViewer } from './components/viewer';
 import { RealTimeProcessing } from './components/RealTimeProcessing';
 import { ConversionPanel } from './components/ConversionPanel';
 import { StreamPathHelp } from './components/StreamPathHelp';
+import { ClasPipelinePanel } from './components/ClasPipelinePanel';
 import { MaskedPathInput } from './components/common/MaskedPathInput';
 import { maskLogLine } from './utils/maskPath';
 import { GnssTimeConverter } from './components/tools/GnssTimeConverter';
@@ -1230,6 +1231,26 @@ function StreamServerPanel() {
   );
 }
 
+function StreamServerWithCLAS() {
+  const [mode, setMode] = useState<string | null>('multi-stream');
+  return (
+    <Stack gap="sm">
+      <Tabs value={mode} onChange={setMode}>
+        <Tabs.List>
+          <Tabs.Tab value="multi-stream">Multi-Stream Relay</Tabs.Tab>
+          <Tabs.Tab value="clas">CLAS Pipeline</Tabs.Tab>
+        </Tabs.List>
+      </Tabs>
+      <div style={{ display: mode === 'multi-stream' ? undefined : 'none' }}>
+        <StreamServerPanel />
+      </div>
+      <div style={{ display: mode === 'clas' ? undefined : 'none' }}>
+        <ClasPipelinePanel />
+      </div>
+    </Stack>
+  );
+}
+
 function RealTimePanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean }) {
   return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} />;
 }
@@ -1348,7 +1369,7 @@ function App() {
           <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} />
         </div>
         <div style={{ display: activeTab === 'stream-server' ? undefined : 'none' }}>
-          <StreamServerPanel />
+          <StreamServerWithCLAS />
         </div>
         <div style={{ display: activeTab === 'conversion' ? undefined : 'none' }}>
           <ConversionPanel />
