@@ -278,7 +278,7 @@ export function ClasPipelinePanel() {
   return (
     <Grid gutter="md" align="stretch">
       {/* Left column: form + status + actions */}
-      <Grid.Col span={{ base: 12, md: 5 }}>
+      <Grid.Col span={{ base: 12, md: 6 }}>
       <Card withBorder p="md" h="100%">
         <Stack gap="xs">
           <Title order={5}>CLAS Pipeline</Title>
@@ -465,7 +465,7 @@ export function ClasPipelinePanel() {
       </Grid.Col>
 
       {/* Right column: live monitoring (flow meter, scatter, logs) */}
-      <Grid.Col span={{ base: 12, md: 7 }}>
+      <Grid.Col span={{ base: 12, md: 6 }}>
       <Stack gap="md" h="100%" style={{ minHeight: 0 }}>
         <ClasFlowMeter stats={flowStats} />
         <Card withBorder p="sm">
