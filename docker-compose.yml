@@ -15,18 +15,20 @@ services:
       - ${DATA_DIR:-./data}:/data:ro
       # Optional: mount host .netrc for data download credentials
       # - ${NETRC_FILE:-/dev/null}:/root/.netrc:ro
-      # Optional: bind mount for serial devices (uncomment if needed)
-      # - /dev/ttyUSB0:/dev/ttyUSB0
+      # CLAS Pipeline (Stream Server tab → CLAS Pipeline) needs serial
+      # passthrough. Uncomment the lines below and set the device paths
+      # in .env (CLAS_INPUT_DEVICE, CLAS_OUTPUT_DEVICE) — defaults to
+      # ttyUSB0 (SBF in) and ttyUSB1 (RTCM3 out).
+      # - /dev/serial:/dev/serial:ro
     environment:
       - PYTHONUNBUFFERED=1
       - EARTHDATA_USER=${EARTHDATA_USER:-}
       - EARTHDATA_PASSWORD=${EARTHDATA_PASSWORD:-}
       - GSI_USER=${GSI_USER:-}
       - GSI_PASSWORD=${GSI_PASSWORD:-}
-    # Device access for serial ports (uncomment if needed)
     # devices:
-    #   - /dev/ttyUSB0:/dev/ttyUSB0
-    #   - /dev/ttyACM0:/dev/ttyACM0
+    #   - "${CLAS_INPUT_DEVICE:-/dev/ttyUSB0}:${CLAS_INPUT_DEVICE:-/dev/ttyUSB0}"
+    #   - "${CLAS_OUTPUT_DEVICE:-/dev/ttyUSB1}:${CLAS_OUTPUT_DEVICE:-/dev/ttyUSB1}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]

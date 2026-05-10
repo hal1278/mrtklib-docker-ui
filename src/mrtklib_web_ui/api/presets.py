@@ -22,10 +22,16 @@ def _slugify(name: str) -> str:
     return re.sub(r"[\s-]+", "-", slug) or "preset"
 
 
+_ALLOWED_MODES = {"post", "realtime", "clas"}
+
+
 def _presets_dir(mode: str) -> Path:
     """Get the presets directory for a mode, creating if needed."""
-    if mode not in ("post", "realtime"):
-        raise HTTPException(status_code=400, detail="Mode must be 'post' or 'realtime'")
+    if mode not in _ALLOWED_MODES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Mode must be one of {sorted(_ALLOWED_MODES)}",
+        )
     d = PRESETS_DIR / mode
     d.mkdir(parents=True, exist_ok=True)
     return d
