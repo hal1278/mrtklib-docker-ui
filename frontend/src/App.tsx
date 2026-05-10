@@ -43,6 +43,7 @@ import { StreamPathHelp } from './components/StreamPathHelp';
 import { ClasPipelinePanel } from './components/ClasPipelinePanel';
 import { MaskedPathInput } from './components/common/MaskedPathInput';
 import { maskLogLine } from './utils/maskPath';
+import { randomUUID } from './utils/uuid';
 import { GnssTimeConverter } from './components/tools/GnssTimeConverter';
 import { DataDownloader } from './components/tools/DataDownloader';
 import { ToolsSidebar } from './components/tools/ToolsSidebar';
@@ -763,12 +764,12 @@ const PATH_PLACEHOLDER_FOR_TYPE: Record<StreamType, string> = {
 
 function StreamServerPanel() {
   const [streams, setStreams] = useState<RelayStream[]>([{
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     name: 'Stream 1',
     status: 'idle',
     processId: null,
-    input: { ...DEFAULT_SS_INPUT, id: crypto.randomUUID() },
-    outputs: [{ ...DEFAULT_SS_OUTPUT, id: crypto.randomUUID() }],
+    input: { ...DEFAULT_SS_INPUT, id: randomUUID() },
+    outputs: [{ ...DEFAULT_SS_OUTPUT, id: randomUUID() }],
     logLines: [],
   }]);
   const [activeStreamId, setActiveStreamId] = useState<string>(streams[0].id);
@@ -832,12 +833,12 @@ function StreamServerPanel() {
     if (streams.length >= 4) return;
     const num = streams.length + 1;
     const newStream: RelayStream = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: `Stream ${num}`,
       status: 'idle',
       processId: null,
-      input: { ...DEFAULT_SS_INPUT, id: crypto.randomUUID() },
-      outputs: [{ ...DEFAULT_SS_OUTPUT, id: crypto.randomUUID() }],
+      input: { ...DEFAULT_SS_INPUT, id: randomUUID() },
+      outputs: [{ ...DEFAULT_SS_OUTPUT, id: randomUUID() }],
       logLines: [],
     };
     setStreams((prev) => [...prev, newStream]);
@@ -939,7 +940,7 @@ function StreamServerPanel() {
     setStreams((prev) => prev.map((s) =>
       s.id === streamId ? {
         ...s,
-        outputs: [...s.outputs, { ...DEFAULT_SS_OUTPUT, id: crypto.randomUUID() }],
+        outputs: [...s.outputs, { ...DEFAULT_SS_OUTPUT, id: randomUUID() }],
       } : s
     ));
   };
