@@ -263,6 +263,46 @@ API requests to the backend at `http://localhost:8000`.
 
 ---
 
+## Releases & Image Maintenance
+
+### Tag → image mapping
+
+The `publish-docker.yml` workflow is the only thing that pushes
+to GHCR / Docker Hub. It runs on two events:
+
+| Trigger | Resulting tags (per registry) |
+|---------|-------------------------------|
+| `git push origin vX.Y.Z[-suffix]` | `X.Y.Z-suffix`, `sha-<7-char>`. For non-prerelease tags also `X.Y`, `X`, `latest`. |
+| `gh workflow run publish-docker.yml --ref <branch>` | `dev-<branch>` only. Repeated runs **overwrite the same tag** in place — no accumulation. |
+
+So the recommended dev cycle is `gh workflow run --ref my-branch` →
+`docker pull ...:dev-my-branch`. Cutting an actual release is
+the only way to mint a new long-lived tag.
+
+### Cleaning up GHCR safely
+
+**Do not bulk-delete "untagged" entries** in the GHCR Versions
+view. Multi-arch images (`linux/amd64` + `linux/arm64`) live as
+a tagged manifest list that *references* per-architecture
+manifests appearing as untagged digests. Deleting those breaks
+`docker pull` for the matching platform with `manifest unknown`.
+
+Safe order if the registry needs a tidy-up:
+
+1. Delete `dev-*` or stale `sha-*` entries that have a tag —
+   their referenced platform manifests then drop to true orphans.
+2. Wait briefly (or refresh the view) and only then delete the
+   now-dereferenced untagged digests.
+3. If a release tag does break, `git push --delete origin vX.Y.Z`
+   followed by `git push origin vX.Y.Z` re-runs the workflow and
+   restores the manifest list. The GitHub Release object
+   re-attaches automatically.
+
+The same rule applies to Docker Hub, which is just slower to
+surface orphan state in its UI.
+
+---
+
 ## Roadmap
 
 | Version | Description |
