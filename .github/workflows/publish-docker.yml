@@ -50,11 +50,20 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/mrtklib-docker-ui
             hatognss/mrtklib-docker-ui
           tags: |
+            # Tag-push (release): semver flavour + sha- alias for git→image
+            # traceability. {{major}}.{{minor}} / {{major}} / latest are
+            # only emitted for stable tags (no '-' in the version) so alpha
+            # releases don't displace the latest stable.
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}},enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
             type=semver,pattern={{major}},enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'tag' }}
+            # workflow_dispatch (dev build): single overwrite-in-place tag
+            # named after the branch, so repeated manual triggers do not
+            # accumulate one sha-XXXXXXX image per click. Slashes in the
+            # branch name are normalised by metadata-action.
+            type=ref,event=branch,prefix=dev-,enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Determine build args
         id: args
