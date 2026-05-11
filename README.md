@@ -272,7 +272,7 @@ to GHCR / Docker Hub. It runs on two events:
 
 | Trigger | Resulting tags (per registry) |
 |---------|-------------------------------|
-| `git push origin vX.Y.Z[-suffix]` | `X.Y.Z-suffix`, `sha-<7-char>`. For non-prerelease tags also `X.Y`, `X`, `latest`. |
+| `git push origin vX.Y.Z[-suffix]` | `X.Y.Z[-suffix]`, `sha-<7-char>`. For non-prerelease tags also `X.Y`, `X`, `latest`. |
 | `gh workflow run publish-docker.yml --ref <branch>` | `dev-<branch>` only. Repeated runs **overwrite the same tag** in place — no accumulation. |
 
 So the recommended dev cycle is `gh workflow run --ref my-branch` →
