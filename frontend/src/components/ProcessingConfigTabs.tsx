@@ -41,6 +41,7 @@ import dayjs from 'dayjs';
 import type {
   MrtkPostConfig,
   PositioningMode,
+  CorrectionProvider,
   Frequency,
   FilterType,
   IonosphereCorrection,
@@ -348,6 +349,29 @@ const LABEL_W = 130;
 const LABEL_STYLE = { width: LABEL_W, flexShrink: 0, fontSize: '11px' } as const;
 const OPT_LABEL_STYLE = { width: LABEL_W, flexShrink: 0 } as const;
 
+// ─── Correction provider ([positioning] correction) ─────────────────────────
+const CORRECTION_OPTIONS: { value: CorrectionProvider; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'igs', label: 'IGS (precise files)' },
+  { value: 'igs-rts', label: 'IGS-RTS (RTCM-SSR)' },
+  { value: 'qzs-madoca', label: 'MADOCA-PPP (QZSS L6E)' },
+  { value: 'gal-has', label: 'Galileo HAS (reserved)' },
+  { value: 'bds-b2b', label: 'BeiDou PPP-B2b (reserved)' },
+  { value: 'qzs-clas', label: 'CLAS (QZSS L6D)' },
+];
+
+// Providers valid per positioning mode (MRTKLIB hard-errors on invalid combos).
+const CORRECTION_BY_MODE: Partial<Record<PositioningMode, CorrectionProvider[]>> = {
+  'ppp-kinematic': ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-static':    ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-fixed':     ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-rtk':       ['qzs-clas'],
+  'vrs-rtk':       ['qzs-clas'],
+};
+function validCorrections(mode: PositioningMode): CorrectionProvider[] {
+  return CORRECTION_BY_MODE[mode] ?? ['none'];
+}
+
 // ─── Public interface ──────────────────────────────────────────────────────
 
 export interface ExecutionProps {
@@ -494,6 +518,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
     config.positioning.positioningMode === 'ppp-kinematic';
 
   const modeDisabled = useModeDependentDisable(config.positioning.positioningMode);
+  const validCorr = validCorrections(config.positioning.positioningMode);
 
   // ── Category rail data (console redesign Phase 3b re-skin) ──
   // Same sections as before; only the presentation changes. The mode-specific
@@ -811,15 +836,22 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   <Select
                     size="xs"
                     value={config.positioning.positioningMode}
-                    onChange={(value) =>
+                    onChange={(value) => {
+                      const newMode = value as PositioningMode;
+                      // Keep correction valid for the new mode (MRTKLIB rejects invalid combos)
+                      const valid = validCorrections(newMode);
+                      const correction = valid.includes(config.positioning.correction)
+                        ? config.positioning.correction
+                        : valid[0];
                       handleConfigChange({
                         ...config,
                         positioning: {
                           ...config.positioning,
-                          positioningMode: value as PositioningMode,
+                          positioningMode: newMode,
+                          correction,
                         },
-                      })
-                    }
+                      });
+                    }}
                     data={[
                       { value: 'single', label: 'Single' },
                       { value: 'dgps', label: 'DGPS/DGNSS' },
@@ -831,7 +863,24 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       { value: 'ppp-static', label: 'PPP-Static' },
                       { value: 'ppp-fixed', label: 'PPP-Fixed' },
                       { value: 'ppp-rtk', label: 'PPP-RTK' },
+                      { value: 'vrs-rtk', label: 'VRS-RTK' },
                     ]}
+                    style={{ flex: 1 }}
+                  />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="positioning.correction" style={OPT_LABEL_STYLE} />
+                  <Select
+                    size="xs"
+                    value={config.positioning.correction}
+                    onChange={(value) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: { ...config.positioning, correction: value as CorrectionProvider },
+                      })
+                    }
+                    data={CORRECTION_OPTIONS.filter((o) => validCorr.includes(o.value))}
+                    disabled={validCorr.length <= 1}
                     style={{ flex: 1 }}
                   />
                 </Group>
@@ -3521,6 +3570,7 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
 
     L.push('[positioning]');
     L.push(`mode                = ${_s(p.positioningMode)}`);
+    L.push(`correction          = ${_s(p.correction)}`);
     if (p.signals && p.signalMode === 'signals') {
       const sigs = p.signals.split(/[,\s]+/).filter(Boolean);
       L.push(`signals             = [${sigs.map(s => _s(s)).join(', ')}]`);

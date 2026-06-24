@@ -36,6 +36,13 @@ const OPTION_META_DEF = {
     label: 'Positioning Mode',
     docsAnchor: '#positioning',
   },
+  'positioning.correction': {
+    label: 'Correction',
+    description:
+      'SSR/PPP correction provider. PPP: igs, igs-rts, qzs-madoca, gal-has, ' +
+      'bds-b2b. PPP-RTK / VRS-RTK: qzs-clas (CLAS). RTK/relative modes: none.',
+    docsAnchor: '#positioning',
+  },
   'positioning.frequency': {
     label: 'Frequencies',
     description:

@@ -12,7 +12,11 @@
 export type PositioningMode =
   | 'single' | 'dgps' | 'kinematic' | 'static'
   | 'moving-base' | 'fixed'
-  | 'ppp-kinematic' | 'ppp-static' | 'ppp-fixed' | 'ppp-rtk';
+  | 'ppp-kinematic' | 'ppp-static' | 'ppp-fixed' | 'ppp-rtk' | 'vrs-rtk';
+
+// [positioning] correction — which SSR/PPP correction provider to use.
+export type CorrectionProvider =
+  | 'none' | 'igs' | 'igs-rts' | 'qzs-madoca' | 'gal-has' | 'bds-b2b' | 'qzs-clas';
 
 export type Frequency = 'l1' | 'l1+l2' | 'l1+l2+l5' | 'l1+l2+l5+l6' | 'l1+l2+l5+l6+l7';
 
@@ -127,6 +131,7 @@ export interface AtmosphereConfig {
 export interface PositioningConfig {
   // [positioning] core
   positioningMode: PositioningMode;
+  correction: CorrectionProvider;
   frequency: Frequency;
   signalMode: SignalMode;         // UI-only: choose between frequency or signals
   signals: string;                // e.g. "G1C,G2W,E1C,E5Q,E7Q,J1C,J5Q,J2X"
@@ -477,6 +482,7 @@ export const DEFAULT_ATMOSPHERE: AtmosphereConfig = {
 
 export const DEFAULT_POSITIONING: PositioningConfig = {
   positioningMode: 'kinematic',
+  correction: 'none',
   frequency: 'l1+l2',
   signalMode: 'frequency',
   signals: '',

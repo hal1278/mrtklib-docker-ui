@@ -12,6 +12,7 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
   return {
     positioning: {
       positioning_mode: p.positioningMode,
+      correction: p.correction,
       frequency: p.frequency,
       signal_mode: p.signalMode,
       signals: p.signals,

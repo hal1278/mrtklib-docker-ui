@@ -102,6 +102,7 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
   return {
     positioning: {
       positioningMode: revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'],
+      correction: get(pos, 'correction', d.positioning.correction),
       frequency: revMap(get(pos, 'frequency', d.positioning.frequency), FREQ_REV) as MrtkPostConfig['positioning']['frequency'],
       signals: Array.isArray(pos.signals) ? (pos.signals as string[]).join(',') : get(pos, 'signals', d.positioning.signals),
       signalMode: pos.signals ? 'signals' : 'frequency',

@@ -79,7 +79,7 @@ export function PostProcessingConfiguration({
   onCollapse,
 }: PostProcessingConfigurationProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
-    key: 'mrtklib-web-ui-mrtk-post-config-v19',
+    key: 'mrtklib-web-ui-mrtk-post-config-v20',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
   });
 

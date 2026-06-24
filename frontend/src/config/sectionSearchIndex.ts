@@ -23,7 +23,9 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   mode: [
-    'positioning mode', 'filter direction', 'solution type', 'frequencies', 'frequency',
+    'positioning mode', 'correction', 'correction provider', 'clas', 'madoca', 'igs', 'igs-rts',
+    'galileo has', 'beidou b2b', 'ssr provider', 'positioning.correction', 'qzs-clas', 'qzs-madoca',
+    'filter direction', 'solution type', 'frequencies', 'frequency',
     'signals', 'signal mode', 'elevation mask', 'snr mask', 'ionosphere', 'troposphere',
     'atmosphere', 'satellite ephemeris', 'ephemeris', 'constellations', 'gps', 'glonass',
     'galileo', 'qzss', 'sbas', 'beidou', 'irnss', 'excluded satellites',

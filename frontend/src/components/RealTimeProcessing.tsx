@@ -212,7 +212,7 @@ interface RealTimeProcessingProps {
 
 export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig, onLiveStatus }: RealTimeProcessingProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
-    key: 'mrtklib-web-ui-mrtk-run-config-v2',
+    key: 'mrtklib-web-ui-mrtk-run-config-v3',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
   });
 
