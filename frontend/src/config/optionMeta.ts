@@ -359,6 +359,13 @@ const OPTION_META_DEF = {
     description: 'Vertical acceleration process noise. Active when dynamics = true.',
     docsAnchor: '#kalman-filter-process-noise',
   },
+  'kf.pn.position': {
+    label: 'Position (m)',
+    description:
+      'Fallback position process noise (horizontal & vertical combined). ' +
+      'Used when Position H and Position V above are left at 0.',
+    docsAnchor: '#kalman-filter-process-noise',
+  },
   'kf.pn.iono_max': {
     label: 'Iono Noise Max (m)',
     description: 'Maximum ionospheric process noise clamp. Prevents excessive iono state growth.',
