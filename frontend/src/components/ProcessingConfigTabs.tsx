@@ -518,6 +518,8 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
 
   const modeDisabled = useModeDependentDisable(config.positioning.positioningMode);
   const validCorr = validCorrections(config.positioning.positioningMode);
+  // Adaptive Filter applies only to PPP-RTK / VRS-RTK.
+  const isAdaptiveMode = ['ppp-rtk', 'vrs-rtk'].includes(config.positioning.positioningMode);
 
   // ── Category rail data (console redesign Phase 3b re-skin) ──
   // Same sections as before; only the presentation changes. The mode-specific
@@ -540,7 +542,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
         { label: 'Kalman Filter', section: 'kf' },
         { label: 'Advanced', section: 'advanced' },
         { label: 'CLAS PPP-RTK', section: 'clas' },
-        { label: 'Adaptive', section: 'adaptive-filter' },
       ] },
     { label: 'Environment', icon: <IconRadar size={12} />, items: [
         { label: 'Receiver', section: 'receiver' },
@@ -1424,10 +1425,11 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             </Stack>
           )}
 
-          {/* ── CLAS PPP-RTK section ── */}
+          {/* ── CLAS PPP-RTK section (incl. Adaptive Filter — PPP-RTK / VRS only) ── */}
           {activeSection === 'clas' && (
-            <Stack gap={6}>
+            <Stack gap="xs">
               <SectionHeader title="CLAS PPP-RTK" anchor="clas-ppk" />
+              <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Grid Radius (m)</Text>
                   <NumberInput size="xs"
@@ -1443,64 +1445,67 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     placeholder="e.g. Trimble NetR9" style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncertainty X (m)</Text>
-                  <NumberInput size="xs"
-                    value={config.positioning.clas.positionUncertaintyX}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyX: Number(v) || 0 } } })}
-                    min={0} decimalScale={1} style={{ flex: 1 }} />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncertainty XYZ (m)</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" aria-label="Uncertainty X"
+                      value={config.positioning.clas.positionUncertaintyX}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyX: Number(v) || 0 } } })}
+                      min={0} decimalScale={1} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>X</Text>} leftSectionWidth={16}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" aria-label="Uncertainty Y"
+                      value={config.positioning.clas.positionUncertaintyY}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyY: Number(v) || 0 } } })}
+                      min={0} decimalScale={1} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Y</Text>} leftSectionWidth={16}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" aria-label="Uncertainty Z"
+                      value={config.positioning.clas.positionUncertaintyZ}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyZ: Number(v) || 0 } } })}
+                      min={0} decimalScale={1} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Z</Text>} leftSectionWidth={16}
+                      style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncertainty Y (m)</Text>
-                  <NumberInput size="xs"
-                    value={config.positioning.clas.positionUncertaintyY}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyY: Number(v) || 0 } } })}
-                    min={0} decimalScale={1} style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncertainty Z (m)</Text>
-                  <NumberInput size="xs"
-                    value={config.positioning.clas.positionUncertaintyZ}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyZ: Number(v) || 0 } } })}
-                    min={0} decimalScale={1} style={{ flex: 1 }} />
-                </Group>
-            </Stack>
-          )}
+              </Stack>
 
-          {/* ── Adaptive Filter section ── */}
-          {activeSection === 'adaptive-filter' && (
-            <Stack gap={6}>
               <SectionHeader title="Adaptive Filter" anchor="adaptive-filter" />
-              <Group wrap="nowrap" align="center" gap="xs">
-                <Text size="xs" c="dimmed" style={LABEL_STYLE}>Enabled</Text>
-                <Switch size="xs" checked={config.adaptiveFilter.enabled}
-                  onChange={(e) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, enabled: e.currentTarget.checked}})} />
-              </Group>
-              <Group wrap="nowrap" align="center" gap="xs">
-                <OptionLabel metaKey="adaptive.iono_forgetting" style={OPT_LABEL_STYLE} />
-                <NumberInput size="xs" value={config.adaptiveFilter.ionoForgetting}
-                  onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoForgetting: Number(v)}})}
-                  disabled={modeDisabled('adaptive.iono_forgetting')}
-                  decimalScale={4} hideControls style={{flex:1}} />
-              </Group>
-              <Group wrap="nowrap" align="center" gap="xs">
-                <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Gain</Text>
-                <NumberInput size="xs" value={config.adaptiveFilter.ionoGain}
-                  onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoGain: Number(v)}})}
-                  decimalScale={4} hideControls style={{flex:1}} />
-              </Group>
-              <Group wrap="nowrap" align="center" gap="xs">
-                <OptionLabel metaKey="adaptive.pva_forgetting" style={OPT_LABEL_STYLE} />
-                <NumberInput size="xs" value={config.adaptiveFilter.pvaForgetting}
-                  onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaForgetting: Number(v)}})}
-                  disabled={modeDisabled('adaptive.pva_forgetting')}
-                  decimalScale={4} hideControls style={{flex:1}} />
-              </Group>
-              <Group wrap="nowrap" align="center" gap="xs">
-                <Text size="xs" c="dimmed" style={LABEL_STYLE}>PVA Gain</Text>
-                <NumberInput size="xs" value={config.adaptiveFilter.pvaGain}
-                  onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaGain: Number(v)}})}
-                  decimalScale={4} hideControls style={{flex:1}} />
-              </Group>
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Enabled</Text>
+                  <Switch size="xs" checked={config.adaptiveFilter.enabled}
+                    disabled={!isAdaptiveMode}
+                    onChange={(e) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, enabled: e.currentTarget.checked}})} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="adaptive.iono_forgetting" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.adaptiveFilter.ionoForgetting}
+                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoForgetting: Number(v)}})}
+                    disabled={!isAdaptiveMode}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Gain</Text>
+                  <NumberInput size="xs" value={config.adaptiveFilter.ionoGain}
+                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoGain: Number(v)}})}
+                    disabled={!isAdaptiveMode}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="adaptive.pva_forgetting" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.adaptiveFilter.pvaForgetting}
+                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaForgetting: Number(v)}})}
+                    disabled={!isAdaptiveMode}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PVA Gain</Text>
+                  <NumberInput size="xs" value={config.adaptiveFilter.pvaGain}
+                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaGain: Number(v)}})}
+                    disabled={!isAdaptiveMode}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+              </Stack>
             </Stack>
           )}
 

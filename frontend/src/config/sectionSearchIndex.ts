@@ -86,15 +86,13 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   clas: [
-    'clas', 'ppp-rtk', 'grid radius', 'grid selection radius', 'receiver type',
+    'clas', 'ppp-rtk', 'vrs', 'grid radius', 'grid selection radius', 'receiver type',
     'uncertainty x', 'uncertainty y', 'uncertainty z', 'position uncertainty',
     'positioning.clas.grid_selection_radius', 'positioning.clas.receiver_type',
     'positioning.clas.position_uncertainty_x', 'positioning.clas.position_uncertainty_y',
     'positioning.clas.position_uncertainty_z',
-  ],
-
-  'adaptive-filter': [
-    'adaptive filter', 'enabled', 'iono forgetting factor', 'iono gain', 'pva forgetting factor',
+    // Adaptive Filter (merged here — PPP-RTK / VRS only)
+    'adaptive filter', 'iono forgetting factor', 'iono gain', 'pva forgetting factor',
     'pva gain', 'forgetting factor',
     'adaptive_filter.enabled', 'adaptive_filter.iono_forgetting', 'adaptive_filter.iono_gain',
     'adaptive_filter.pva_forgetting', 'adaptive_filter.pva_gain',
