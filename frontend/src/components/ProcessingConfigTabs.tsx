@@ -114,33 +114,21 @@ function StationPositionInput({
         />
       </Group>
       <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>{coordLabels[0]}</Text>
-        <NumberInput
-          size="xs"
-          value={value.values[0]}
-          onChange={(val: any) => onChange({ ...value, values: [Number(val), value.values[1], value.values[2]] })}
-          decimalScale={9} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1 }}
-        />
+        <ComboLabel label={value.mode === 'xyz' ? 'X / Y / Z (m)' : 'Lat / Lon / Hgt'} style={L}
+          fields={[{ name: coordLabels[0] }, { name: coordLabels[1] }, { name: coordLabels[2] }]} />
+        <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+          <NumberInput size="xs" title={coordLabels[0]} aria-label={coordLabels[0]} value={value.values[0]}
+            onChange={(val: any) => onChange({ ...value, values: [Number(val), value.values[1], value.values[2]] })}
+            decimalScale={9} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1, minWidth: 0 }} />
+          <NumberInput size="xs" title={coordLabels[1]} aria-label={coordLabels[1]} value={value.values[1]}
+            onChange={(val: any) => onChange({ ...value, values: [value.values[0], Number(val), value.values[2]] })}
+            decimalScale={9} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1, minWidth: 0 }} />
+          <NumberInput size="xs" title={coordLabels[2]} aria-label={coordLabels[2]} value={value.values[2]}
+            onChange={(val: any) => onChange({ ...value, values: [value.values[0], value.values[1], Number(val)] })}
+            decimalScale={4} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1, minWidth: 0 }} />
+        </Group>
       </Group>
-      <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>{coordLabels[1]}</Text>
-        <NumberInput
-          size="xs"
-          value={value.values[1]}
-          onChange={(val: any) => onChange({ ...value, values: [value.values[0], Number(val), value.values[2]] })}
-          decimalScale={9} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1 }}
-        />
-      </Group>
-      <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>{coordLabels[2]}</Text>
-        <NumberInput
-          size="xs"
-          value={value.values[2]}
-          onChange={(val: any) => onChange({ ...value, values: [value.values[0], value.values[1], Number(val)] })}
-          decimalScale={4} hideControls disabled={coordsDisabled || !isManualInput} style={{ flex: 1 }}
-        />
-      </Group>
-      <Group wrap="nowrap" align="center" gap="xs">
+      <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
         <Text size="xs" c="dimmed" style={L}>Antenna Type</Text>
         <Checkbox
           size="xs"
@@ -163,31 +151,19 @@ function StationPositionInput({
         </Group>
       )}
       <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>Delta-E (m)</Text>
-        <NumberInput
-          size="xs"
-          value={value.antennaDelta[0]}
-          onChange={(val: any) => onChange({ ...value, antennaDelta: [Number(val), value.antennaDelta[1], value.antennaDelta[2]] })}
-          decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1 }}
-        />
-      </Group>
-      <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>Delta-N (m)</Text>
-        <NumberInput
-          size="xs"
-          value={value.antennaDelta[1]}
-          onChange={(val: any) => onChange({ ...value, antennaDelta: [value.antennaDelta[0], Number(val), value.antennaDelta[2]] })}
-          decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1 }}
-        />
-      </Group>
-      <Group wrap="nowrap" align="center" gap="xs">
-        <Text size="xs" c="dimmed" style={L}>Delta-U (m)</Text>
-        <NumberInput
-          size="xs"
-          value={value.antennaDelta[2]}
-          onChange={(val: any) => onChange({ ...value, antennaDelta: [value.antennaDelta[0], value.antennaDelta[1], Number(val)] })}
-          decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1 }}
-        />
+        <ComboLabel label="Delta E/N/U (m)" style={L}
+          fields={[{ name: 'Delta-E (m)' }, { name: 'Delta-N (m)' }, { name: 'Delta-U (m)' }]} />
+        <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+          <NumberInput size="xs" title="Delta-E (m)" aria-label="Delta-E" value={value.antennaDelta[0]}
+            onChange={(val: any) => onChange({ ...value, antennaDelta: [Number(val), value.antennaDelta[1], value.antennaDelta[2]] })}
+            decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1, minWidth: 0 }} />
+          <NumberInput size="xs" title="Delta-N (m)" aria-label="Delta-N" value={value.antennaDelta[1]}
+            onChange={(val: any) => onChange({ ...value, antennaDelta: [value.antennaDelta[0], Number(val), value.antennaDelta[2]] })}
+            decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1, minWidth: 0 }} />
+          <NumberInput size="xs" title="Delta-U (m)" aria-label="Delta-U" value={value.antennaDelta[2]}
+            onChange={(val: any) => onChange({ ...value, antennaDelta: [value.antennaDelta[0], value.antennaDelta[1], Number(val)] })}
+            decimalScale={4} hideControls disabled={antennaDisabled} style={{ flex: 1, minWidth: 0 }} />
+        </Group>
       </Group>
     </Stack>
   );
@@ -2379,7 +2355,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   style={{ flex: 1 }}
                 />
               </Group>
-              <Group wrap="nowrap" align="center" gap="xs">
+              <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                 <Text size="xs" c="dimmed" style={LABEL_STYLE}>Init Reset</Text>
                 <Switch
                   size="xs"
