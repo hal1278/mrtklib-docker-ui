@@ -1369,6 +1369,7 @@ function App() {
               value={primaryMode}
               onChange={setActiveTab}
               data={PRIMARY_MODES as unknown as { value: string; label: string }[]}
+              styles={{ label: { fontWeight: 600 } }}
             />
           </Group>
 
