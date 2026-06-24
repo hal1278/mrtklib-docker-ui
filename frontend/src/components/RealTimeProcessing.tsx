@@ -4,7 +4,6 @@ import {
   Card,
   Stack,
   Select,
-  SimpleGrid,
   Text,
   Title,
   Group,
@@ -55,6 +54,7 @@ import { SkySnrPanel, type Satellite } from './SkySnrPanel';
 import { TimeSeriesChart, type TimeSeriesPoint } from './TimeSeriesChart';
 import { MaskedPathInput } from './common/MaskedPathInput';
 import { ConsoleFrame, ConfigCollapseButton } from './ConsoleFrame';
+import { RtMetricsRow } from './RtMetricsRow';
 import { maskLogLine } from '../utils/maskPath';
 
 // ─── Stream editor sub-component ────────────────────────────────────────────
@@ -544,80 +544,8 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
         <Card withBorder p="xs" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Stack gap={6} style={{ flex: 1, minHeight: 0 }}>
 
-            {/* 1. Live coordinates row */}
-            <SimpleGrid cols={4} spacing="xs">
-              {([
-                { label: 'Latitude', value: lastPosition?.lat.toFixed(8) },
-                { label: 'Longitude', value: lastPosition?.lon.toFixed(8) },
-                { label: 'Height (m)', value: lastPosition?.height.toFixed(3) },
-              ] as const).map((item) => (
-                <div key={item.label}>
-                  <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>{item.label}</Text>
-                  <Text
-                    ff="monospace"
-                    style={{ fontSize: 14, lineHeight: 1.3, color: item.value ? 'var(--color-live, #3b82f6)' : undefined }}
-                    c={item.value ? undefined : 'dimmed'}
-                  >
-                    {item.value ?? '---'}
-                  </Text>
-                </div>
-              ))}
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Quality</Text>
-                <Group gap={4} align="center">
-                  {lastPosition ? (
-                    <Badge
-                      size="sm"
-                      variant="filled"
-                      color={lastPosition.quality === 1 ? 'green' : lastPosition.quality === 2 ? 'yellow' : 'gray'}
-                    >
-                      {lastPosition.quality === 1 ? 'FIX' : lastPosition.quality === 2 ? 'FLOAT' : lastPosition.quality === 5 ? 'SINGLE' : `Q=${lastPosition.quality}`}
-                    </Badge>
-                  ) : (
-                    <Text ff="monospace" c="dimmed" style={{ fontSize: 14, lineHeight: 1.3 }}>---</Text>
-                  )}
-                </Group>
-              </div>
-            </SimpleGrid>
-
-            {/* 2. Quality metrics row */}
-            <SimpleGrid cols={4} spacing="xs">
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>AR Ratio</Text>
-                <Group gap={4} align="center">
-                  <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                    {lastPosition?.ratio.toFixed(1) ?? '---'}
-                  </Text>
-                  {lastPosition && (
-                    <Badge
-                      size="xs"
-                      variant="filled"
-                      color={lastPosition.quality === 1 ? 'green' : lastPosition.quality === 2 ? 'yellow' : 'gray'}
-                    >
-                      {lastPosition.quality === 1 ? 'FIXED' : lastPosition.quality === 2 ? 'FLOAT' : 'SINGLE'}
-                    </Badge>
-                  )}
-                </Group>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Satellites</Text>
-                <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                  {lastPosition?.ns ?? '---'}
-                </Text>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Age (s)</Text>
-                <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                  {lastPosition?.age.toFixed(1) ?? '---'}
-                </Text>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Time (GPST)</Text>
-                <Text ff="monospace" c="dimmed" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                  {lastPosition?.timestamp ?? '---'}
-                </Text>
-              </div>
-            </SimpleGrid>
+            {/* 1. Metrics row (Time · Position · Quality · Ratio · Age · Satellites) */}
+            <RtMetricsRow lastPosition={lastPosition} satellites={satellites} />
 
             {/* 3. Tab bar + 4. Chart area */}
             <Tabs defaultValue="chart" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
