@@ -8,7 +8,7 @@ import type { Satellite } from './SkySnrPanel';
 
 const MONO = "'IBM Plex Mono', monospace";
 
-const QUALITY: Record<number, { label: string; color: string }> = {
+export const QUALITY: Record<number, { label: string; color: string }> = {
   1: { label: 'FIX',    color: 'var(--color-fix)' },
   2: { label: 'FLOAT',  color: 'var(--color-float)' },
   3: { label: 'SBAS',   color: '#a855f7' },

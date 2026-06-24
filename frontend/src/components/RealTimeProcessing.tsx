@@ -190,15 +190,28 @@ const OUTPUT_LOG_SLOTS = [
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
+/** Compact live RT status fed to the global bottom status bar. */
+export interface RtLiveStatus {
+  lat: number;
+  lon: number;
+  height: number;
+  quality: number;
+  ns: number;
+  ratio: number;
+  age: number;
+  satsVisible: number;
+}
+
 interface RealTimeProcessingProps {
   onConfigChange?: (config: MrtkPostConfig) => void;
   onNavigateToAiSettings?: () => void;
   aiConfigured?: boolean;
   configOpen?: boolean;
   onToggleConfig?: () => void;
+  onLiveStatus?: (status: RtLiveStatus | null) => void;
 }
 
-export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig }: RealTimeProcessingProps) {
+export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig, onLiveStatus }: RealTimeProcessingProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
     key: 'mrtklib-web-ui-mrtk-run-config-v2',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
@@ -256,6 +269,25 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logLines]);
+
+  // Feed live status to the global bottom status bar (null clears it on stop).
+  useEffect(() => {
+    if (!onLiveStatus) return;
+    if (!lastPosition) {
+      onLiveStatus(null);
+      return;
+    }
+    onLiveStatus({
+      lat: lastPosition.lat,
+      lon: lastPosition.lon,
+      height: lastPosition.height,
+      quality: lastPosition.quality,
+      ns: lastPosition.ns,
+      ratio: lastPosition.ratio,
+      age: lastPosition.age,
+      satsVisible: satellites.length,
+    });
+  }, [lastPosition, satellites, onLiveStatus]);
 
   // Build backend-compatible streams config
   const buildStreamsPayload = useCallback(() => ({

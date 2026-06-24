@@ -39,7 +39,8 @@ import {
 import { PostProcessingConfiguration  } from './components';
 import { ResultViewer } from './components/viewer';
 import { ConsoleFrame } from './components/ConsoleFrame';
-import { RealTimeProcessing } from './components/RealTimeProcessing';
+import { RealTimeProcessing, type RtLiveStatus } from './components/RealTimeProcessing';
+import { QUALITY } from './components/RtMetricsRow';
 import { ConversionPanel } from './components/ConversionPanel';
 import { StreamPathHelp } from './components/StreamPathHelp';
 import { ClasPipelinePanel } from './components/ClasPipelinePanel';
@@ -1253,8 +1254,8 @@ function StreamServerWithCLAS() {
   );
 }
 
-function RealTimePanel({ onNavigateToAiSettings, aiConfigured, configOpen, onToggleConfig }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void }) {
-  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} configOpen={configOpen} onToggleConfig={onToggleConfig} />;
+function RealTimePanel({ onNavigateToAiSettings, aiConfigured, configOpen, onToggleConfig, onLiveStatus }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void; onLiveStatus?: (s: RtLiveStatus | null) => void }) {
+  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} configOpen={configOpen} onToggleConfig={onToggleConfig} onLiveStatus={onLiveStatus} />;
 }
 
 // ConversionPanel is now imported from ./components/ConversionPanel
@@ -1274,13 +1275,19 @@ const SECONDARY_VIEWS = [
 
 const MONO = "'IBM Plex Mono', monospace";
 
-/** Bottom status bar (console redesign Phase 2). Live metrics are placeholders
- *  until RT position state is lifted in Phase 4 — shown as dashes for now. */
-function StatusBar({ activeTab, mrtkVersion }: { activeTab: string; mrtkVersion: string }) {
+/** Bottom status bar (console redesign Phase 2/4). Shows live RT solution
+ *  values when a Real-time session is producing them; dashes otherwise. */
+function StatusBar({ activeTab, mrtkVersion, rtStatus }: { activeTab: string; mrtkVersion: string; rtStatus: RtLiveStatus | null }) {
   const modeLabel =
     activeTab === 'realtime' ? 'real-time' :
     activeTab === 'post-processing' ? 'post-proc' :
     (SECONDARY_VIEWS.find((v) => v.value === activeTab)?.label.toLowerCase() ?? activeTab);
+
+  const cell = { fontFamily: MONO, fontSize: 10.5 } as const;
+  const q = rtStatus ? QUALITY[rtStatus.quality] : undefined;
+  const sat = rtStatus
+    ? (rtStatus.satsVisible > 0 ? `${rtStatus.ns}/${rtStatus.satsVisible}` : `${rtStatus.ns}`)
+    : '—/—';
 
   return (
     <Group
@@ -1290,16 +1297,24 @@ function StatusBar({ activeTab, mrtkVersion }: { activeTab: string; mrtkVersion:
       wrap="nowrap"
       style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--mantine-color-dimmed)', overflow: 'hidden' }}
     >
-      <Text span style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--color-single)' }}>● —</Text>
-      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>Sat —/—</Text>
-      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>ratio —</Text>
-      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>age —</Text>
-      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>mode: {modeLabel}</Text>
-      {mrtkVersion && (
-        <Text span visibleFrom="md" style={{ fontFamily: MONO, fontSize: 10.5 }}>MRTKLIB {mrtkVersion}</Text>
+      {rtStatus ? (
+        <Text span style={{ ...cell, color: q?.color ?? 'var(--mantine-color-dimmed)', fontWeight: 600 }}>
+          ● {q?.label ?? `Q${rtStatus.quality}`}
+        </Text>
+      ) : (
+        <Text span style={{ ...cell, color: 'var(--color-single)' }}>● —</Text>
       )}
-      <Text span ml="auto" style={{ fontFamily: MONO, fontSize: 10.5, whiteSpace: 'nowrap' }}>
-        N —  E —  H — m
+      <Text span style={cell}>Sat {sat}</Text>
+      <Text span style={cell}>ratio {rtStatus ? rtStatus.ratio.toFixed(1) : '—'}</Text>
+      <Text span style={cell}>age {rtStatus ? `${rtStatus.age.toFixed(1)}s` : '—'}</Text>
+      <Text span style={cell}>mode: {modeLabel}</Text>
+      {mrtkVersion && (
+        <Text span visibleFrom="md" style={cell}>MRTKLIB {mrtkVersion}</Text>
+      )}
+      <Text span ml="auto" style={{ ...cell, whiteSpace: 'nowrap' }}>
+        {rtStatus
+          ? `N ${rtStatus.lat.toFixed(5)}  E ${rtStatus.lon.toFixed(5)}  H ${rtStatus.height.toFixed(1)} m`
+          : 'N —  E —  H — m'}
       </Text>
     </Group>
   );
@@ -1309,6 +1324,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<string | null>('realtime');
   const [configOpen, setConfigOpen] = useState(true);
   const toggleConfig = useCallback(() => setConfigOpen((o) => !o), []);
+  const [rtStatus, setRtStatus] = useState<RtLiveStatus | null>(null);
+  const handleRtStatus = useCallback((s: RtLiveStatus | null) => setRtStatus(s), []);
   const [healthStatus, setHealthStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [mrtkVersion, setMrtkVersion] = useState<string>('');
   const [selectedTool, setSelectedTool] = useState('time-converter');
@@ -1428,7 +1445,7 @@ function App() {
           <PostProcessingPanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} />
         </div>
         <div style={{ display: activeTab === 'realtime' ? undefined : 'none' }}>
-          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} />
+          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} onLiveStatus={handleRtStatus} />
         </div>
         <div style={{ display: activeTab === 'stream-server' ? undefined : 'none' }}>
           <StreamServerWithCLAS />
@@ -1449,7 +1466,7 @@ function App() {
       </AppShell.Main>
 
       <AppShell.Footer>
-        <StatusBar activeTab={activeTab ?? ''} mrtkVersion={mrtkVersion} />
+        <StatusBar activeTab={activeTab ?? ''} mrtkVersion={mrtkVersion} rtStatus={rtStatus} />
       </AppShell.Footer>
     </AppShell>
   );
