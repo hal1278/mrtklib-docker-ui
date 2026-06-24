@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
+  Box,
   Stack,
   Select,
   NumberInput,
@@ -33,6 +34,7 @@ import {
   IconCalendar,
   IconCheck,
   IconArrowRight,
+  IconSearch,
 } from '@tabler/icons-react';
 import { DateTimePicker } from '@mantine/dates';
 import dayjs from 'dayjs';
@@ -239,28 +241,8 @@ function FileInputRow({
 
 // ─── Sidebar helper components ─────────────────────────────────────────────
 
-function SidebarGroup({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <>
-      <Group
-        gap={4}
-        style={{
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          fontSize: '10px',
-          padding: '12px 8px 4px',
-          userSelect: 'none',
-          color: 'var(--mantine-color-dimmed)',
-        }}
-      >
-        {icon}
-        <Text size="xs" fw={600} c="dimmed" style={{ fontSize: '10px' }}>{label}</Text>
-      </Group>
-      {children}
-    </>
-  );
-}
-
+// ─── Category rail row (console redesign Phase 3b re-skin) ───────────────────
+// Rounded, accent-soft active highlight matching the Carbon/Azure prototype.
 function SidebarItem({
   label,
   section,
@@ -276,18 +258,19 @@ function SidebarItem({
 }) {
   const isActive = active === section;
   return (
-    <Indicator color="red" size={6} disabled={!showBadge} offset={4} position="middle-end">
+    <Indicator color="red" size={6} disabled={!showBadge} offset={8} position="middle-end">
       <UnstyledButton
         onClick={() => onClick(section)}
         style={{
           display: 'block',
           width: '100%',
-          padding: '6px 8px',
-          fontSize: '11px',
-          borderLeft: isActive ? '2px solid var(--mantine-primary-color-filled)' : '2px solid transparent',
-          backgroundColor: isActive ? 'var(--mantine-color-default-hover)' : undefined,
-          color: isActive ? 'var(--mantine-color-text)' : 'var(--mantine-color-dimmed)',
-          fontWeight: isActive ? 500 : 400,
+          padding: '6px 9px',
+          marginBottom: 2,
+          borderRadius: 6,
+          fontSize: '12px',
+          backgroundColor: isActive ? 'var(--mantine-color-blue-light)' : 'transparent',
+          color: isActive ? 'var(--mantine-color-blue-light-color)' : 'var(--mantine-color-dimmed)',
+          fontWeight: isActive ? 600 : 400,
         }}
       >
         {label}
@@ -404,6 +387,7 @@ export interface ProcessingConfigTabsProps {
 export function ProcessingConfigPanel({ config, onConfigChange, execution, streamPanels, activeSectionRef, defaultSection }: ProcessingConfigTabsProps) {
   const initialSection = defaultSection ?? (execution ? 'input-files' : streamPanels?.length ? streamPanels[0].key : 'mode');
   const [activeSection, setActiveSection] = useState(initialSection);
+  const [sidebarFilter, setSidebarFilter] = useState('');
 
   // Expose setActiveSection to parent for auto-focus on validation error
   useEffect(() => {
@@ -510,44 +494,103 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
 
   const modeDisabled = useModeDependentDisable(config.positioning.positioningMode);
 
+  // ── Category rail data (console redesign Phase 3b re-skin) ──
+  // Same sections as before; only the presentation changes. The mode-specific
+  // I/O category (Streams for RT / Input-Output Files for PP) is pinned to the top.
+  interface RailItem { label: string; section: string; showBadge?: boolean }
+  interface RailCategory { label: string; icon: React.ReactNode; topIO?: boolean; items: RailItem[] }
+  const railCategories: RailCategory[] = [
+    ...(streamPanels && streamPanels.length > 0
+      ? [{ label: 'Streams', icon: <IconWifi size={12} />, topIO: true,
+          items: streamPanels.map((sp) => ({ label: sp.label, section: sp.key })) }]
+      : []),
+    ...(execution
+      ? [{ label: 'Input / Output Files', icon: <IconPlayerPlay size={12} />, topIO: true,
+          items: [{ label: 'Input Files', section: 'input-files',
+            showBadge: !execution.roverFile || !execution.navFile || !execution.outputFile }] }]
+      : []),
+    { label: 'Positioning', icon: <IconSatellite size={12} />, items: [
+        { label: 'Mode', section: 'mode' },
+        { label: 'AR', section: 'ar' },
+        { label: 'Kalman Filter', section: 'kf' },
+        { label: 'Advanced', section: 'advanced' },
+        { label: 'CLAS PPP-RTK', section: 'clas' },
+        { label: 'Adaptive', section: 'adaptive-filter' },
+      ] },
+    { label: 'Environment', icon: <IconRadar size={12} />, items: [
+        { label: 'Receiver', section: 'receiver' },
+        { label: 'Antenna', section: 'antenna' },
+      ] },
+    { label: 'Output', icon: <IconFileExport size={12} />, items: [
+        { label: 'Format', section: 'format' },
+        { label: 'Files', section: 'files' },
+        { label: 'Server', section: 'server' },
+      ] },
+  ];
+  const railFilter = sidebarFilter.trim().toLowerCase();
+  const visibleRail = railCategories
+    .map((cat) => ({
+      ...cat,
+      items: railFilter
+        ? cat.items.filter((it) => it.label.toLowerCase().includes(railFilter) || cat.label.toLowerCase().includes(railFilter))
+        : cat.items,
+    }))
+    .filter((cat) => cat.items.length > 0);
+
   return (
     <>
       <Group gap={0} align="stretch" wrap="nowrap" style={{ minHeight: 400 }}>
-        {/* Left sidebar - 130px fixed */}
-        <ScrollArea style={{ width: 130, flexShrink: 0, borderRight: '1px solid var(--mantine-color-default-border)' }}>
-          <Stack gap={0}>
-            {streamPanels && streamPanels.length > 0 && (
-              <SidebarGroup label="STREAMS" icon={<IconWifi size={12} />}>
-                {streamPanels.map((sp) => (
-                  <SidebarItem key={sp.key} label={sp.label} section={sp.key} active={activeSection} onClick={setActiveSection} />
-                ))}
-              </SidebarGroup>
-            )}
-            {execution && (
-              <SidebarGroup label="EXECUTION" icon={<IconPlayerPlay size={12} />}>
-                <SidebarItem label="Input Files" section="input-files" active={activeSection} onClick={setActiveSection}
-                  showBadge={!execution.roverFile || !execution.navFile || !execution.outputFile} />
-              </SidebarGroup>
-            )}
-            <SidebarGroup label="POSITIONING" icon={<IconSatellite size={12} />}>
-              <SidebarItem label="Mode" section="mode" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="AR" section="ar" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Kalman Filter" section="kf" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Advanced" section="advanced" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="CLAS PPP-RTK" section="clas" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Adaptive" section="adaptive-filter" active={activeSection} onClick={setActiveSection} />
-            </SidebarGroup>
-            <SidebarGroup label="ENVIRONMENT" icon={<IconRadar size={12} />}>
-              <SidebarItem label="Receiver" section="receiver" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Antenna" section="antenna" active={activeSection} onClick={setActiveSection} />
-            </SidebarGroup>
-            <SidebarGroup label="OUTPUT" icon={<IconFileExport size={12} />}>
-              <SidebarItem label="Format" section="format" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Files" section="files" active={activeSection} onClick={setActiveSection} />
-              <SidebarItem label="Server" section="server" active={activeSection} onClick={setActiveSection} />
-            </SidebarGroup>
-          </Stack>
-        </ScrollArea>
+        {/* Left category rail */}
+        <Box
+          style={{
+            width: 168,
+            flexShrink: 0,
+            borderRight: '1px solid var(--app-border, var(--mantine-color-default-border))',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
+          <Box style={{ padding: '10px 9px 6px' }}>
+            <TextInput
+              size="xs"
+              placeholder="Filter…"
+              value={sidebarFilter}
+              onChange={(e) => setSidebarFilter(e.currentTarget.value)}
+              leftSection={<IconSearch size={12} />}
+              styles={{ input: { fontSize: '11px' } }}
+            />
+          </Box>
+          <ScrollArea style={{ flex: 1 }}>
+            <Box px={8} pb={6}>
+              {visibleRail.map((cat) => (
+                <Box
+                  key={cat.label}
+                  mb={cat.topIO ? 6 : 2}
+                  pb={cat.topIO ? 6 : 0}
+                  style={cat.topIO ? { borderBottom: '1px solid var(--app-border, var(--mantine-color-default-border))' } : undefined}
+                >
+                  <Group gap={5} wrap="nowrap" style={{ padding: '9px 6px 5px', userSelect: 'none' }}>
+                    {cat.icon}
+                    <Text fw={600} c="dimmed" style={{ fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      {cat.label}
+                    </Text>
+                  </Group>
+                  {cat.items.map((it) => (
+                    <SidebarItem
+                      key={it.section}
+                      label={it.label}
+                      section={it.section}
+                      active={activeSection}
+                      onClick={setActiveSection}
+                      showBadge={it.showBadge}
+                    />
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          </ScrollArea>
+        </Box>
 
         {/* Right form panel */}
         <ScrollArea style={{ flex: 1 }} p="xs">
