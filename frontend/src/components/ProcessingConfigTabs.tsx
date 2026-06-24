@@ -2422,60 +2422,21 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   />
                 </Group>
 
-                <div>
-                  <Text size="xs" style={{ fontSize: '10px', marginBottom: '4px' }}>
-                    Header / Options / Velocity
-                  </Text>
-                  <Group gap="xs">
-                    <Switch
-                      size="xs"
-                      label="Header"
-                      checked={config.output.outputHeader}
-                      onChange={(e: any) =>
-                        handleConfigChange({
-                          ...config,
-                          output: {
-                            ...config.output,
-                            outputHeader: e.currentTarget.checked,
-                          },
-                        })
-                      }
-                      disabled={isSolNMEA}
-                      styles={{ label: { fontSize: '10px' } }}
-                    />
-                    <Switch
-                      size="xs"
-                      label="Options"
-                      checked={config.output.outputProcessingOptions}
-                      onChange={(e: any) =>
-                        handleConfigChange({
-                          ...config,
-                          output: {
-                            ...config.output,
-                            outputProcessingOptions: e.currentTarget.checked,
-                          },
-                        })
-                      }
-                      disabled={isSolNMEA}
-                      styles={{ label: { fontSize: '10px' } }}
-                    />
-                    <Switch
-                      size="xs"
-                      label="Velocity"
-                      checked={config.output.outputVelocity}
-                      onChange={(e: any) =>
-                        handleConfigChange({
-                          ...config,
-                          output: {
-                            ...config.output,
-                            outputVelocity: e.currentTarget.checked,
-                          },
-                        })
-                      }
-                      styles={{ label: { fontSize: '10px' } }}
-                    />
+                {/* Output fields — label left, toggles right */}
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Output</Text>
+                  <Group wrap="nowrap" align="center" gap="md" justify="space-between" style={{ flex: 1, minWidth: 0 }}>
+                    <Switch size="xs" label="Header" checked={config.output.outputHeader}
+                      onChange={(e: any) => handleConfigChange({ ...config, output: { ...config.output, outputHeader: e.currentTarget.checked } })}
+                      disabled={isSolNMEA} styles={{ label: { fontSize: '10px' } }} />
+                    <Switch size="xs" label="Options" checked={config.output.outputProcessingOptions}
+                      onChange={(e: any) => handleConfigChange({ ...config, output: { ...config.output, outputProcessingOptions: e.currentTarget.checked } })}
+                      disabled={isSolNMEA} styles={{ label: { fontSize: '10px' } }} />
+                    <Switch size="xs" label="Velocity" checked={config.output.outputVelocity}
+                      onChange={(e: any) => handleConfigChange({ ...config, output: { ...config.output, outputVelocity: e.currentTarget.checked } })}
+                      styles={{ label: { fontSize: '10px' } }} />
                   </Group>
-                </div>
+                </Group>
 
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Time Format</Text>
@@ -2624,122 +2585,61 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               {/* Group C: Output Control */}
               <Divider my={4} />
               <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Static Sol Mode</Text>
-                  <Select
-                    size="xs"
-                    value={config.output.staticSolutionMode}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, staticSolutionMode: value as StaticSolutionMode },
-                      })
-                    }
-                    data={[
-                      { value: 'all', label: 'All' },
-                      { value: 'single', label: 'Single' },
-                      { value: 'fixed', label: 'Fixed' },
-                    ]}
-                    disabled={!isStaticMode}
-                    style={{ flex: 1 }}
-                  />
+                {/* Static Sol Mode + Single on Outage on one row */}
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Static / Single Outage</Text>
+                  <Group wrap="nowrap" align="center" gap="md" style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="Static Solution Mode" aria-label="Static Solution Mode" value={config.output.staticSolutionMode}
+                      onChange={(value: any) => handleConfigChange({ ...config, output: { ...config.output, staticSolutionMode: value as StaticSolutionMode } })}
+                      data={[
+                        { value: 'all', label: 'All' },
+                        { value: 'single', label: 'Single' },
+                        { value: 'fixed', label: 'Fixed' },
+                      ]}
+                      disabled={!isStaticMode} style={{ flex: 1, minWidth: 0 }} />
+                    <Switch size="xs" label="Single" title="Single on Outage" checked={config.output.outputSingleOnOutage}
+                      onChange={(e: any) => handleConfigChange({ ...config, output: { ...config.output, outputSingleOnOutage: e.currentTarget.checked } })}
+                      disabled={isSingle} styles={{ label: { fontSize: '10px' } }} style={{ flexShrink: 0 }} />
+                  </Group>
                 </Group>
 
+                {/* NMEA RMC/GGA + GSA/GSV intervals on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Single on Outage</Text>
-                  <Checkbox
-                    size="xs"
-                    checked={config.output.outputSingleOnOutage}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: {
-                          ...config.output,
-                          outputSingleOnOutage: e.currentTarget.checked,
-                        },
-                      })
-                    }
-                    disabled={isSingle}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>NMEA RMC/GGA · GSA/GSV (s)</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="NMEA RMC/GGA interval (s)" aria-label="NMEA RMC/GGA (s)" value={config.output.nmeaIntervalRmcGga}
+                      onChange={(value: any) => handleConfigChange({ ...config, output: { ...config.output, nmeaIntervalRmcGga: Number(value) } })}
+                      min={0} step={1} hideControls disabled={!isSolNMEA} style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="NMEA GSA/GSV interval (s)" aria-label="NMEA GSA/GSV (s)" value={config.output.nmeaIntervalGsaGsv}
+                      onChange={(value: any) => handleConfigChange({ ...config, output: { ...config.output, nmeaIntervalGsaGsv: Number(value) } })}
+                      min={0} step={1} hideControls disabled={!isSolNMEA} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
 
+                {/* Sol Status + Debug Trace on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>NMEA RMC/GGA (s)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.output.nmeaIntervalRmcGga}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, nmeaIntervalRmcGga: Number(value) },
-                      })
-                    }
-                    min={0}
-                    step={1}
-                    hideControls
-                    disabled={!isSolNMEA}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>NMEA GSA/GSV (s)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.output.nmeaIntervalGsaGsv}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, nmeaIntervalGsaGsv: Number(value) },
-                      })
-                    }
-                    min={0}
-                    step={1}
-                    hideControls
-                    disabled={!isSolNMEA}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Sol Status</Text>
-                  <Select
-                    size="xs"
-                    value={config.output.outputSolutionStatus}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, outputSolutionStatus: value as any },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'state', label: 'State' },
-                      { value: 'residual', label: 'Residual' },
-                    ]}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Debug Trace</Text>
-                  <Select
-                    size="xs"
-                    value={config.output.debugTrace}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, debugTrace: value as DebugTraceLevel },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'level1', label: 'Level 1' },
-                      { value: 'level2', label: 'Level 2' },
-                      { value: 'level3', label: 'Level 3' },
-                      { value: 'level4', label: 'Level 4' },
-                      { value: 'level5', label: 'Level 5' },
-                    ]}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Sol Status / Debug Trace</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="Solution Status" aria-label="Sol Status" value={config.output.outputSolutionStatus}
+                      onChange={(value: any) => handleConfigChange({ ...config, output: { ...config.output, outputSolutionStatus: value as any } })}
+                      data={[
+                        { value: 'off', label: 'OFF' },
+                        { value: 'state', label: 'State' },
+                        { value: 'residual', label: 'Residual' },
+                      ]}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="Debug Trace" aria-label="Debug Trace" value={config.output.debugTrace}
+                      onChange={(value: any) => handleConfigChange({ ...config, output: { ...config.output, debugTrace: value as DebugTraceLevel } })}
+                      data={[
+                        { value: 'off', label: 'OFF' },
+                        { value: 'level1', label: 'Level 1' },
+                        { value: 'level2', label: 'Level 2' },
+                        { value: 'level3', label: 'Level 3' },
+                        { value: 'level4', label: 'Level 4' },
+                        { value: 'level5', label: 'Level 5' },
+                      ]}
+                      style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
             </Stack>
