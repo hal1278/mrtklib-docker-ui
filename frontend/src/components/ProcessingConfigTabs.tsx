@@ -1384,6 +1384,18 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     data={['0.1%', '0.5%', '1%', '5%', '10%', '20%']}
                     disabled={modeDisabled('ar.thresholds.alpha')} style={{flex:1}} />
                 </Group>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>ISB</Text>
+                  <Switch size="xs" checked={config.receiver.isb}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, isb: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Phase Shift</Text>
+                  <Select size="xs" value={config.receiver.phaseShift}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, phaseShift: value } })}
+                    data={[{ value: 'off', label: 'OFF' }, { value: 'table', label: 'Table' }]}
+                    style={{ flex: 1 }} />
+                </Group>
               </Stack>
 
               <SectionHeader title="Adaptive Filter" anchor="adaptive-filter" />
@@ -2023,37 +2035,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                         receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked },
                       })
                     }
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>ISB</Text>
-                  <Switch
-                    size="xs"
-                    checked={config.receiver.isb}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, isb: e.currentTarget.checked },
-                      })
-                    }
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Phase Shift</Text>
-                  <Select
-                    size="xs"
-                    value={config.receiver.phaseShift}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, phaseShift: value },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'table', label: 'Table' },
-                    ]}
-                    style={{ flex: 1 }}
                   />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
