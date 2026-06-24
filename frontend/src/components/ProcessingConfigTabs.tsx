@@ -976,6 +976,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     }
                     min={0}
                     max={90}
+                    hideControls
                     style={{ flex: 1 }}
                   />
                 </Group>
@@ -1342,7 +1343,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   <NumberInput size="xs"
                     value={config.positioning.clas.gridSelectionRadius}
                     onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, gridSelectionRadius: Number(v) || 0 } } })}
-                    min={0} style={{ flex: 1 }} />
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Receiver Type</Text>
@@ -1496,6 +1497,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     max={10}
                     step={0.1}
                     decimalScale={1}
+                    hideControls
                     disabled={modeDisabled('ar.thresholds.ratio')}
                     style={{ flex: 1 }}
                   />
@@ -2067,6 +2069,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     }
                     min={0}
                     decimalScale={1}
+                    hideControls
                     style={{ flex: 1 }}
                   />
                 </Group>
@@ -2083,6 +2086,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     }
                     min={0}
                     decimalScale={1}
+                    hideControls
                     style={{ flex: 1 }}
                   />
                 </Group>
@@ -2099,6 +2103,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     }
                     min={0}
                     decimalScale={4}
+                    hideControls
                     style={{ flex: 1 }}
                   />
                 </Group>
