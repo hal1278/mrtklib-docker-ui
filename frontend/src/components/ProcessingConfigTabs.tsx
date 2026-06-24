@@ -67,6 +67,7 @@ import { FileBrowserModal } from './FileBrowserModal';
 import { OptionLabel } from './common/OptionLabel';
 import { useModeDependentDisable } from '../hooks/useModeDependentDisable';
 import { DOCS_BASE as OPTION_DOCS_BASE } from '../config/optionMeta';
+import { SECTION_SEARCH_TEXT } from '../config/sectionSearchIndex';
 
 // ─── Sub-components ────────────────────────────────────────────────────────
 
@@ -527,13 +528,19 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
         { label: 'Server', section: 'server' },
       ] },
   ];
-  const railFilter = sidebarFilter.trim().toLowerCase();
+  // Filter matches the category label, the sub-item (section) label, AND that
+  // section's field labels + TOML keys (SECTION_SEARCH_TEXT). Multi-word queries
+  // use AND semantics so e.g. "ar ratio" or "elevation mask" both narrow well.
+  const railTokens = sidebarFilter.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const visibleRail = railCategories
     .map((cat) => ({
       ...cat,
-      items: railFilter
-        ? cat.items.filter((it) => it.label.toLowerCase().includes(railFilter) || cat.label.toLowerCase().includes(railFilter))
-        : cat.items,
+      items: railTokens.length === 0
+        ? cat.items
+        : cat.items.filter((it) => {
+            const haystack = `${cat.label} ${it.label} ${SECTION_SEARCH_TEXT[it.section] ?? ''}`.toLowerCase();
+            return railTokens.every((t) => haystack.includes(t));
+          }),
     }))
     .filter((cat) => cat.items.length > 0);
 
