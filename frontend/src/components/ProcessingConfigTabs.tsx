@@ -48,7 +48,6 @@ import type {
   TroposphereCorrection,
   EphemerisOption,
   TidalCorrection,
-  ReceiverDynamics,
   ARMode,
   SolutionFormat,
   TimeFormat,
@@ -963,26 +962,21 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     )}
                   </Group>
                 </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <OptionLabel metaKey="positioning.dynamics" style={OPT_LABEL_STYLE} />
-                  <Select
+                  <Switch
                     size="xs"
-                    value={config.positioning.receiverDynamics}
-                    onChange={(value: any) =>
+                    checked={config.positioning.receiverDynamics === 'on'}
+                    onChange={(e: any) =>
                       handleConfigChange({
                         ...config,
                         positioning: {
                           ...config.positioning,
-                          receiverDynamics: value as ReceiverDynamics,
+                          receiverDynamics: e.currentTarget.checked ? 'on' : 'off',
                         },
                       })
                     }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                    ]}
                     disabled={!isReceiverDynamicsEnabled}
-                    style={{ flex: 1 }}
                   />
                 </Group>
               </Stack>
