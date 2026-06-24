@@ -1369,7 +1369,7 @@ function App() {
               value={primaryMode}
               onChange={setActiveTab}
               data={PRIMARY_MODES as unknown as { value: string; label: string }[]}
-              styles={{ label: { fontWeight: 600 } }}
+              styles={{ label: { fontWeight: 600, paddingLeft: 15, paddingRight: 15 } }}
             />
           </Group>
 
