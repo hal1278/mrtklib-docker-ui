@@ -7,6 +7,7 @@ import {
   Grid,
   Group,
   ScrollArea,
+  SegmentedControl,
   Stack,
   Tabs,
   Text,
@@ -1258,8 +1259,54 @@ function RealTimePanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToA
 
 // ConversionPanel is now imported from ./components/ConversionPanel
 
+// Primary modes live in the header SegmentedControl; the remaining screens move
+// to a secondary "More" menu (console redesign Phase 2).
+const PRIMARY_MODES = [
+  { value: 'realtime', label: 'Real-time' },
+  { value: 'post-processing', label: 'Post-processing' },
+] as const;
+
+const SECONDARY_VIEWS = [
+  { value: 'stream-server', label: 'Stream Server' },
+  { value: 'conversion', label: 'Conversion' },
+  { value: 'tools', label: 'Tools' },
+] as const;
+
+const MONO = "'IBM Plex Mono', monospace";
+
+/** Bottom status bar (console redesign Phase 2). Live metrics are placeholders
+ *  until RT position state is lifted in Phase 4 — shown as dashes for now. */
+function StatusBar({ activeTab, mrtkVersion }: { activeTab: string; mrtkVersion: string }) {
+  const modeLabel =
+    activeTab === 'realtime' ? 'real-time' :
+    activeTab === 'post-processing' ? 'post-proc' :
+    (SECONDARY_VIEWS.find((v) => v.value === activeTab)?.label.toLowerCase() ?? activeTab);
+
+  return (
+    <Group
+      h="100%"
+      px="md"
+      gap={18}
+      wrap="nowrap"
+      style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--mantine-color-dimmed)', overflow: 'hidden' }}
+    >
+      <Text span style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--color-single)' }}>● —</Text>
+      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>Sat —/—</Text>
+      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>ratio —</Text>
+      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>age —</Text>
+      <Text span style={{ fontFamily: MONO, fontSize: 10.5 }}>mode: {modeLabel}</Text>
+      {mrtkVersion && (
+        <Text span visibleFrom="md" style={{ fontFamily: MONO, fontSize: 10.5 }}>MRTKLIB {mrtkVersion}</Text>
+      )}
+      <Text span ml="auto" style={{ fontFamily: MONO, fontSize: 10.5, whiteSpace: 'nowrap' }}>
+        N —  E —  H — m
+      </Text>
+    </Group>
+  );
+}
+
 function App() {
-  const [activeTab, setActiveTab] = useState<string | null>('stream-server');
+  const [activeTab, setActiveTab] = useState<string | null>('realtime');
   const [healthStatus, setHealthStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [mrtkVersion, setMrtkVersion] = useState<string>('');
   const [selectedTool, setSelectedTool] = useState('time-converter');
@@ -1298,39 +1345,50 @@ function App() {
       });
   }, []);
 
+  // Header navigation state (console redesign Phase 2)
+  const isPrimaryMode = activeTab === 'realtime' || activeTab === 'post-processing';
+  const primaryMode = isPrimaryMode ? (activeTab as string) : '';
+
   return (
-    <AppShell header={{ height: 60 }} padding="md">
+    <AppShell header={{ height: 52 }} footer={{ height: 30 }} padding="md">
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          {/* Logo & Title */}
-          <Group gap="sm">
-            <IconSatellite size={28} />
-            <Stack gap={0}>
-              <Title order={4} visibleFrom="sm">MRTKLIB Web UI</Title>
-              {mrtkVersion && (
-                <Text size="xs" c="dimmed" visibleFrom="md">MRTKLIB {mrtkVersion}</Text>
-              )}
-            </Stack>
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          {/* Brand + primary mode switch */}
+          <Group gap="md" wrap="nowrap">
+            <Group gap={9} wrap="nowrap">
+              <IconSatellite size={22} />
+              <Text fw={600} size="sm" visibleFrom="sm" style={{ whiteSpace: 'nowrap' }}>
+                MRTKLIB Console
+              </Text>
+            </Group>
+            <SegmentedControl
+              size="xs"
+              visibleFrom="sm"
+              value={primaryMode}
+              onChange={setActiveTab}
+              data={PRIMARY_MODES as unknown as { value: string; label: string }[]}
+            />
           </Group>
 
-          {/* Tabs - Center */}
-          <Tabs
-            value={activeTab}
-            onChange={setActiveTab}
-            variant="pills"
-            visibleFrom="sm"
-          >
-            <Tabs.List>
-              <Tabs.Tab value="post-processing">Post Processing</Tabs.Tab>
-              <Tabs.Tab value="realtime">Real-Time</Tabs.Tab>
-              <Tabs.Tab value="stream-server">Stream Server</Tabs.Tab>
-              <Tabs.Tab value="conversion">Conversion</Tabs.Tab>
-              <Tabs.Tab value="tools">Tools</Tabs.Tab>
-            </Tabs.List>
-          </Tabs>
-
-          {/* Right Controls */}
-          <Group gap="sm">
+          {/* Secondary views (flat, right-aligned) + status + theme */}
+          <Group gap="sm" wrap="nowrap">
+            <Group gap={2} wrap="nowrap" visibleFrom="sm">
+              {SECONDARY_VIEWS.map((v) => {
+                const active = activeTab === v.value;
+                return (
+                  <Button
+                    key={v.value}
+                    size="xs"
+                    variant={active ? 'light' : 'subtle'}
+                    color={active ? 'blue' : 'gray'}
+                    onClick={() => setActiveTab(v.value)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {v.label}
+                  </Button>
+                );
+              })}
+            </Group>
             <Badge
               color={healthStatus === 'ok' ? 'green' : healthStatus === 'error' ? 'red' : 'gray'}
               variant="dot"
@@ -1386,6 +1444,10 @@ function App() {
           </div>
         </div>
       </AppShell.Main>
+
+      <AppShell.Footer>
+        <StatusBar activeTab={activeTab ?? ''} mrtkVersion={mrtkVersion} />
+      </AppShell.Footer>
     </AppShell>
   );
 }
