@@ -540,7 +540,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
         { label: 'Mode', section: 'mode' },
         { label: 'AR', section: 'ar' },
         { label: 'Kalman Filter', section: 'kf' },
-        { label: 'CLAS PPP-RTK', section: 'clas' },
+        { label: 'CLAS PPP-RTK/VRS', section: 'clas' },
       ] },
     { label: 'Environment', icon: <IconRadar size={12} />, items: [
         { label: 'Receiver', section: 'receiver' },
@@ -1356,10 +1356,10 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             </Stack>
           )}
 
-          {/* ── CLAS PPP-RTK section (incl. Adaptive Filter — PPP-RTK / VRS only) ── */}
+          {/* ── CLAS PPP-RTK/VRS section (incl. AR significance level + Adaptive Filter — PPP-RTK / VRS only) ── */}
           {activeSection === 'clas' && (
             <Stack gap="xs">
-              <SectionHeader title="CLAS PPP-RTK" anchor="clas-ppk" />
+              <SectionHeader title="CLAS PPP-RTK/VRS" anchor="clas-ppk" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Grid Radius (m)</Text>
@@ -1399,6 +1399,13 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       min={0} decimalScale={1} hideControls
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="ar.thresholds.alpha" style={OPT_LABEL_STYLE} />
+                  <Select size="xs" value={config.ambiguityResolution.thresholds.alpha}
+                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, alpha: value}}})}
+                    data={['0.1%', '0.5%', '1%', '5%', '10%', '20%']}
+                    disabled={modeDisabled('ar.thresholds.alpha')} style={{flex:1}} />
                 </Group>
               </Stack>
 
@@ -1581,13 +1588,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio6')}
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.alpha" style={OPT_LABEL_STYLE} />
-                  <Select size="xs" value={config.ambiguityResolution.thresholds.alpha}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, alpha: value}}})}
-                    data={['0.1%', '0.5%', '1%', '5%', '10%', '20%']}
-                    disabled={modeDisabled('ar.thresholds.alpha')} style={{flex:1}} />
                 </Group>
               </Stack>
 

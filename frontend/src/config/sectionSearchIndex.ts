@@ -46,14 +46,14 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ar: [
     'ar mode', 'ambiguity resolution', 'glonass ar', 'beidou ar', 'bds ar', 'qzss ar',
     'ratio threshold', 'ar elevation mask', 'hold elevation mask', 'ratio 1', 'ratio 2',
-    'ratio 3', 'ratio 4', 'ratio 5', 'ratio 6', 'ar significance level', 'alpha',
+    'ratio 3', 'ratio 4', 'ratio 5', 'ratio 6',
     'lock count', 'min fix epochs', 'max lambda iterations', 'outage reset count',
     'slip threshold', 'doppler', 'cycle slip', 'min ambiguities', 'max excluded sats',
     'min fix pairs', 'min drop pairs', 'min hold pairs', 'ar filter', 'partial ar',
     'ambiguity_resolution.mode', 'ambiguity_resolution.glonass_ar', 'ambiguity_resolution.bds_ar',
     'ambiguity_resolution.qzs_ar', 'ambiguity_resolution.thresholds.ratio',
     'ambiguity_resolution.thresholds.elevation_mask', 'ambiguity_resolution.thresholds.hold_elevation',
-    'ambiguity_resolution.thresholds.ratio1', 'ambiguity_resolution.thresholds.alpha',
+    'ambiguity_resolution.thresholds.ratio1',
     'ambiguity_resolution.counters.lock_count', 'ambiguity_resolution.counters.min_fix',
     'ambiguity_resolution.counters.max_iterations', 'ambiguity_resolution.counters.out_count',
     'ambiguity_resolution.partial_ar.min_ambiguities', 'ambiguity_resolution.partial_ar.ar_filter',
@@ -85,7 +85,8 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   clas: [
-    'clas', 'ppp-rtk', 'vrs', 'grid radius', 'grid selection radius', 'receiver type',
+    'clas', 'ppp-rtk', 'vrs', 'vrs-rtk', 'grid radius', 'grid selection radius', 'receiver type',
+    'ar significance level', 'significance level', 'alpha', 'ambiguity_resolution.thresholds.alpha',
     'uncertainty x', 'uncertainty y', 'uncertainty z', 'position uncertainty',
     'positioning.clas.grid_selection_radius', 'positioning.clas.receiver_type',
     'positioning.clas.position_uncertainty_x', 'positioning.clas.position_uncertainty_y',
