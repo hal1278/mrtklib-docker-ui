@@ -957,6 +957,28 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     </ActionIcon>
                   )}
                 </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="positioning.dynamics" style={OPT_LABEL_STYLE} />
+                  <Select
+                    size="xs"
+                    value={config.positioning.receiverDynamics}
+                    onChange={(value: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          receiverDynamics: value as ReceiverDynamics,
+                        },
+                      })
+                    }
+                    data={[
+                      { value: 'off', label: 'OFF' },
+                      { value: 'on', label: 'ON' },
+                    ]}
+                    disabled={!isReceiverDynamicsEnabled}
+                    style={{ flex: 1 }}
+                  />
+                </Group>
               </Stack>
 
               {/* Group B: Masks & Environment */}
@@ -1070,6 +1092,112 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     style={{ flex: 1 }}
                   />
                 </Group>
+
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Earth Tides</Text>
+                  <Select
+                    size="xs"
+                    value={config.positioning.corrections.tidalCorrection}
+                    onChange={(value: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, tidalCorrection: value as TidalCorrection },
+                        },
+                      })
+                    }
+                    data={[
+                      { value: 'off', label: 'OFF' },
+                      { value: 'on', label: 'Solid' },
+                      { value: 'otl', label: 'Solid+OTL' },
+                      { value: 'solid+otl-clasgrid+pole', label: 'Solid+OTL+Pole' },
+                    ]}
+                    style={{ flex: 1 }}
+                  />
+                </Group>
+
+                <Group justify="space-between" gap="md" mt={6}>
+                  <Switch
+                    size="xs"
+                    label="Sat PCV"
+                    checked={config.positioning.corrections.satelliteAntenna}
+                    onChange={(e: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, satelliteAntenna: e.currentTarget.checked },
+                        },
+                      })
+                    }
+                    disabled={!isPPP}
+                    styles={{ label: { fontSize: '10px' } }}
+                  />
+                  <Switch
+                    size="xs"
+                    label="Rec PCV"
+                    checked={config.positioning.corrections.receiverAntenna}
+                    onChange={(e: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, receiverAntenna: e.currentTarget.checked },
+                        },
+                      })
+                    }
+                    disabled={!isPPP}
+                    styles={{ label: { fontSize: '10px' } }}
+                  />
+                  <Switch
+                    size="xs"
+                    label="Phase Windup"
+                    checked={config.positioning.corrections.phaseWindup !== 'off'}
+                    onChange={(e: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, phaseWindup: e.currentTarget.checked ? "on" as const : "off" as const },
+                        },
+                      })
+                    }
+                    disabled={!isPPP}
+                    styles={{ label: { fontSize: '10px' } }}
+                  />
+                  <Switch
+                    size="xs"
+                    label="Reject Eclipse"
+                    checked={config.positioning.corrections.excludeEclipse}
+                    onChange={(e: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, excludeEclipse: e.currentTarget.checked },
+                        },
+                      })
+                    }
+                    disabled={!isPPP}
+                    styles={{ label: { fontSize: '10px' } }}
+                  />
+                  <Switch
+                    size="xs"
+                    label="RAIM FDE"
+                    checked={config.positioning.corrections.raimFde}
+                    onChange={(e: any) =>
+                      handleConfigChange({
+                        ...config,
+                        positioning: {
+                          ...config.positioning,
+                          corrections: { ...config.positioning.corrections, raimFde: e.currentTarget.checked },
+                        },
+                      })
+                    }
+                    styles={{ label: { fontSize: '10px' } }}
+                  />
+                </Group>
               </Stack>
 
               {/* Group C: Satellite Selection */}
@@ -1078,7 +1206,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 <Text size="xs" style={{ fontSize: '10px' }}>
                   Constellations
                 </Text>
-                <Group gap="xs">
+                <Group justify="space-between" gap="md">
                   <Checkbox
                     size="xs"
                     label="GPS"
@@ -1231,141 +1359,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
           {/* ── Advanced section ── */}
           {activeSection === 'advanced' && (
             <Stack gap="xs">
-              <SectionHeader title="Advanced Settings" anchor="advanced" />
-              <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Earth Tides</Text>
-                  <Select
-                    size="xs"
-                    value={config.positioning.corrections.tidalCorrection}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, tidalCorrection: value as TidalCorrection },
-                        },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'Solid' },
-                      { value: 'otl', label: 'Solid+OTL' },
-                      { value: 'solid+otl-clasgrid+pole', label: 'Solid+OTL+Pole' },
-                    ]}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="positioning.dynamics" style={OPT_LABEL_STYLE} />
-                  <Select
-                    size="xs"
-                    value={config.positioning.receiverDynamics}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          receiverDynamics: value as ReceiverDynamics,
-                        },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                    ]}
-                    disabled={!isReceiverDynamicsEnabled}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-
-                <Text size="xs" style={{ fontSize: '10px' }}>
-                  Corrections & Options
-                </Text>
-                <Group gap="xs">
-                  <Switch
-                    size="xs"
-                    label="Sat PCV"
-                    checked={config.positioning.corrections.satelliteAntenna}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, satelliteAntenna: e.currentTarget.checked },
-                        },
-                      })
-                    }
-                    disabled={!isPPP}
-                    styles={{ label: { fontSize: '10px' } }}
-                  />
-                  <Switch
-                    size="xs"
-                    label="Rec PCV"
-                    checked={config.positioning.corrections.receiverAntenna}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, receiverAntenna: e.currentTarget.checked },
-                        },
-                      })
-                    }
-                    disabled={!isPPP}
-                    styles={{ label: { fontSize: '10px' } }}
-                  />
-                  <Switch
-                    size="xs"
-                    label="Phase Windup"
-                    checked={config.positioning.corrections.phaseWindup !== 'off'}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, phaseWindup: e.currentTarget.checked ? "on" as const : "off" as const },
-                        },
-                      })
-                    }
-                    disabled={!isPPP}
-                    styles={{ label: { fontSize: '10px' } }}
-                  />
-                  <Switch
-                    size="xs"
-                    label="Reject Eclipse"
-                    checked={config.positioning.corrections.excludeEclipse}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, excludeEclipse: e.currentTarget.checked },
-                        },
-                      })
-                    }
-                    disabled={!isPPP}
-                    styles={{ label: { fontSize: '10px' } }}
-                  />
-                  <Switch
-                    size="xs"
-                    label="RAIM FDE"
-                    checked={config.positioning.corrections.raimFde}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: {
-                          ...config.positioning,
-                          corrections: { ...config.positioning.corrections, raimFde: e.currentTarget.checked },
-                        },
-                      })
-                    }
-                    styles={{ label: { fontSize: '10px' } }}
-                  />
-                </Group>
-              </Stack>
-
               {/* Rejection Criteria */}
               <SectionHeader title="Rejection Criteria" anchor="rejection" />
               <Stack gap={6}>
