@@ -540,7 +540,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
         { label: 'Mode', section: 'mode' },
         { label: 'AR', section: 'ar' },
         { label: 'Kalman Filter', section: 'kf' },
-        { label: 'Advanced', section: 'advanced' },
         { label: 'CLAS PPP-RTK', section: 'clas' },
       ] },
     { label: 'Environment', icon: <IconRadar size={12} />, items: [
@@ -1357,74 +1356,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             </Stack>
           )}
 
-          {/* ── Advanced section ── */}
-          {activeSection === 'advanced' && (
-            <Stack gap="xs">
-              {/* Rejection Criteria */}
-              <SectionHeader title="Rejection Criteria" anchor="rejection" />
-              <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.innovation" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.innovation}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(v)}})}
-                    disabled={modeDisabled('rejection.innovation')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.l1_l2_residual" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.l1L2Residual}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, l1L2Residual: Number(v)}})}
-                    disabled={modeDisabled('rejection.l1_l2_residual')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.dispersive" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.dispersive}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, dispersive: Number(v)}})}
-                    disabled={modeDisabled('rejection.dispersive')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.non_dispersive" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.nonDispersive}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, nonDispersive: Number(v)}})}
-                    disabled={modeDisabled('rejection.non_dispersive')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Hold Chi-Square</Text>
-                  <NumberInput size="xs" value={config.rejection.holdChiSquare}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, holdChiSquare: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Fix Chi-Square</Text>
-                  <NumberInput size="xs" value={config.rejection.fixChiSquare}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, fixChiSquare: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.gdop" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.gdop}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pseudorange Diff</Text>
-                  <NumberInput size="xs" value={config.rejection.pseudorangeDiff}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, pseudorangeDiff: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pos Error Count</Text>
-                  <NumberInput size="xs" value={config.rejection.positionErrorCount}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, positionErrorCount: Number(v)}})}
-                    decimalScale={0} hideControls style={{flex:1}} />
-                </Group>
-              </Stack>
-            </Stack>
-          )}
-
           {/* ── CLAS PPP-RTK section (incl. Adaptive Filter — PPP-RTK / VRS only) ── */}
           {activeSection === 'clas' && (
             <Stack gap="xs">
@@ -1606,53 +1537,46 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
-                {/* Ratio 1–6 paired 2 per row */}
+                {/* Ratio 1–6 paired 3 per row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Ratio 1 / 2" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Ratio 1 / 2 / 3" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Ratio 1', metaKey: 'ar.thresholds.ratio1' },
                       { name: 'Ratio 2', metaKey: 'ar.thresholds.ratio2' },
+                      { name: 'Ratio 3', metaKey: 'ar.thresholds.ratio3' },
                     ]} />
                   <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Ratio 1 / 2 Ratio 1" aria-label="Ratio 1" value={config.ambiguityResolution.thresholds.ratio1}
+                    <NumberInput size="xs" title="Ratio 1" aria-label="Ratio 1" value={config.ambiguityResolution.thresholds.ratio1}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio1: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio1')}
                       style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Ratio 1 / 2 Ratio 2" aria-label="Ratio 2" value={config.ambiguityResolution.thresholds.ratio2}
+                    <NumberInput size="xs" title="Ratio 2" aria-label="Ratio 2" value={config.ambiguityResolution.thresholds.ratio2}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio2: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio2')}
                       style={{ flex: 1, minWidth: 0 }} />
-                  </Group>
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Ratio 3 / 4" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'Ratio 3', metaKey: 'ar.thresholds.ratio3' },
-                      { name: 'Ratio 4', metaKey: 'ar.thresholds.ratio4' },
-                    ]} />
-                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Ratio 3 / 4 Ratio 3" aria-label="Ratio 3" value={config.ambiguityResolution.thresholds.ratio3}
+                    <NumberInput size="xs" title="Ratio 3" aria-label="Ratio 3" value={config.ambiguityResolution.thresholds.ratio3}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio3: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio3')}
                       style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Ratio 3 / 4 Ratio 4" aria-label="Ratio 4" value={config.ambiguityResolution.thresholds.ratio4}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio4: Number(value)}}})}
-                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio4')}
-                      style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Ratio 5 / 6" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Ratio 4 / 5 / 6" style={OPT_LABEL_STYLE}
                     fields={[
+                      { name: 'Ratio 4', metaKey: 'ar.thresholds.ratio4' },
                       { name: 'Ratio 5', metaKey: 'ar.thresholds.ratio5' },
                       { name: 'Ratio 6', metaKey: 'ar.thresholds.ratio6' },
                     ]} />
                   <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Ratio 5 / 6 Ratio 5" aria-label="Ratio 5" value={config.ambiguityResolution.thresholds.ratio5}
+                    <NumberInput size="xs" title="Ratio 4" aria-label="Ratio 4" value={config.ambiguityResolution.thresholds.ratio4}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio4: Number(value)}}})}
+                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio4')}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Ratio 5" aria-label="Ratio 5" value={config.ambiguityResolution.thresholds.ratio5}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio5: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio5')}
                       style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Ratio 5 / 6 Ratio 6" aria-label="Ratio 6" value={config.ambiguityResolution.thresholds.ratio6}
+                    <NumberInput size="xs" title="Ratio 6" aria-label="Ratio 6" value={config.ambiguityResolution.thresholds.ratio6}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio6: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio6')}
                       style={{ flex: 1, minWidth: 0 }} />
@@ -1672,7 +1596,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <Stack gap={6}>
                 {/* Lock Count + Min Fix Epochs on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Lock Cnt / Fix Ep" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Lock Cnt / Min Fix Eps" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Lock Count', metaKey: 'ar.counters.lock_count' },
                       { name: 'Min Fix Epochs', metaKey: 'ar.counters.min_fix' },
@@ -1703,29 +1627,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     <NumberInput size="xs" title="Max Iter / Out Cnt Outage Reset" aria-label="Outage Reset Count" value={config.ambiguityResolution.counters.outCount}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, counters: {...config.ambiguityResolution.counters, outCount: Number(value)}}})}
                       min={0} step={1} hideControls disabled={modeDisabled('ar.counters.out_count')}
-                      style={{ flex: 1, minWidth: 0 }} />
-                  </Group>
-                </Group>
-              </Stack>
-
-              {/* Rejection */}
-              <Divider my={4} />
-              <Stack gap={6}>
-                {/* Innovation + GDOP on one row */}
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Innovation / GDOP" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'Innovation', metaKey: 'rejection.innovation' },
-                      { name: 'GDOP', metaKey: 'rejection.gdop' },
-                    ]} />
-                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Innovation / GDOP Innovation" aria-label="Innovation (m)" value={config.rejection.innovation}
-                      onChange={(value: any) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(value)}})}
-                      min={0} step={1} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Innovation / GDOP GDOP" aria-label="GDOP" value={config.rejection.gdop}
-                      onChange={(value: any) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(value)}})}
-                      min={0} step={1} hideControls
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
@@ -1777,7 +1678,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 </Group>
                 {/* Min Fix / Drop / Hold Pairs */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Min Pairs" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Min Pairs Fix/Drop/Hold" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Fix', metaKey: 'ar.partial_ar.min_fix_sats' },
                       { name: 'Drop', metaKey: 'ar.partial_ar.min_drop_sats' },
@@ -1857,7 +1758,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <Stack gap={6}>
                 {/* Code/Phase Ratio L1/L2/L5 */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Code/Phase Ratio" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Code/Phase Ratio L1/L2/L5" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'L1', metaKey: 'kf.meas.code_phase_ratio_L1' },
                       { name: 'L2' },
@@ -1878,7 +1779,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
 
                 {/* Phase Error Base / Elevation / Baseline */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Phase Error" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Phase Error Base/Elev/BL" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Base', metaKey: 'kf.meas.phase' },
                       { name: 'Elevation', metaKey: 'kf.meas.phase_elevation' },
@@ -1900,7 +1801,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
 
                 {/* Doppler / URA Ratio */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Doppler / URA" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Doppler / URA Ratio" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Doppler' },
                       { name: 'URA Ratio', metaKey: 'kf.meas.ura_ratio' },
@@ -1922,7 +1823,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <Stack gap={6}>
                 {/* Accel Noise Horizontal / Vertical */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Accel Noise H/V" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Accel Noise Hor/Ver" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Horizontal', metaKey: 'kf.pn.accel_h' },
                       { name: 'Vertical', metaKey: 'kf.pn.accel_v' },
@@ -2050,6 +1951,69 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       onChange={(v) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, initialStd: {...config.kalmanFilter.initialStd, troposphere: Number(v)}}})}
                       decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
                   </Group>
+                </Group>
+              </Stack>
+
+              {/* Rejection Criteria (merged from the former Advanced section) */}
+              <SectionHeader title="Rejection Criteria" anchor="rejection" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="rejection.innovation" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.rejection.innovation}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(v)}})}
+                    disabled={modeDisabled('rejection.innovation')}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="rejection.l1_l2_residual" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.rejection.l1L2Residual}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, l1L2Residual: Number(v)}})}
+                    disabled={modeDisabled('rejection.l1_l2_residual')}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="rejection.dispersive" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.rejection.dispersive}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, dispersive: Number(v)}})}
+                    disabled={modeDisabled('rejection.dispersive')}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="rejection.non_dispersive" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.rejection.nonDispersive}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, nonDispersive: Number(v)}})}
+                    disabled={modeDisabled('rejection.non_dispersive')}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Hold Chi-Square</Text>
+                  <NumberInput size="xs" value={config.rejection.holdChiSquare}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, holdChiSquare: Number(v)}})}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Fix Chi-Square</Text>
+                  <NumberInput size="xs" value={config.rejection.fixChiSquare}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, fixChiSquare: Number(v)}})}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <OptionLabel metaKey="rejection.gdop" style={OPT_LABEL_STYLE} />
+                  <NumberInput size="xs" value={config.rejection.gdop}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(v)}})}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pseudorange Diff</Text>
+                  <NumberInput size="xs" value={config.rejection.pseudorangeDiff}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, pseudorangeDiff: Number(v)}})}
+                    decimalScale={4} hideControls style={{flex:1}} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pos Error Count</Text>
+                  <NumberInput size="xs" value={config.rejection.positionErrorCount}
+                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, positionErrorCount: Number(v)}})}
+                    decimalScale={0} hideControls style={{flex:1}} />
                 </Group>
               </Stack>
             </Stack>

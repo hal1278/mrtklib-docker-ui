@@ -34,6 +34,13 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'positioning.snr_mask', 'positioning.atmosphere.ionosphere', 'positioning.atmosphere.troposphere',
     'positioning.satellite_ephemeris', 'positioning.ephemeris_option', 'positioning.constellations',
     'positioning.excluded_satellites',
+    // Receiver Dynamics + Earth Tides + corrections toggles (relocated into Basic Strategy)
+    'earth tides', 'tidal correction', 'receiver dynamics', 'sat pcv', 'rec pcv',
+    'satellite antenna pcv', 'receiver antenna pcv', 'phase windup', 'reject eclipse',
+    'exclude eclipse', 'raim fde', 'positioning.receiver_dynamics',
+    'positioning.corrections.tidal_correction', 'positioning.corrections.satellite_antenna',
+    'positioning.corrections.receiver_antenna', 'positioning.corrections.phase_windup',
+    'positioning.corrections.exclude_eclipse', 'positioning.corrections.raim_fde',
   ],
 
   ar: [
@@ -70,19 +77,11 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'kalman_filter.process_noise.position_h', 'kalman_filter.process_noise.position_v',
     'kalman_filter.initial_std.bias', 'kalman_filter.initial_std.ionosphere',
     'kalman_filter.initial_std.troposphere',
-  ],
-
-  advanced: [
-    'earth tides', 'tidal correction', 'receiver dynamics', 'sat pcv', 'rec pcv',
-    'satellite antenna pcv', 'receiver antenna pcv', 'phase windup', 'reject eclipse',
-    'exclude eclipse', 'raim fde', 'innovation threshold', 'l1 l2 residual', 'dispersive residual',
+    // Rejection Criteria (merged into Kalman Filter from the former Advanced section)
+    'rejection criteria', 'innovation threshold', 'l1 l2 residual', 'dispersive residual',
     'non-dispersive residual', 'hold chi-square', 'fix chi-square', 'max gdop', 'pseudorange diff',
-    'pos error count', 'rejection criteria',
-    'positioning.corrections.tidal_correction', 'positioning.receiver_dynamics',
-    'positioning.corrections.satellite_antenna', 'positioning.corrections.receiver_antenna',
-    'positioning.corrections.phase_windup', 'positioning.corrections.exclude_eclipse',
-    'positioning.corrections.raim_fde', 'rejection.innovation', 'rejection.l1_l2_residual',
-    'rejection.dispersive', 'rejection.non_dispersive', 'rejection.gdop',
+    'pos error count', 'rejection.innovation', 'rejection.l1_l2_residual', 'rejection.dispersive',
+    'rejection.non_dispersive', 'rejection.gdop',
   ],
 
   clas: [
