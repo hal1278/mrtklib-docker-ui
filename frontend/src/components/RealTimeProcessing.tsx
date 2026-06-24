@@ -15,7 +15,7 @@ import {
   Badge,
   ScrollArea,
   Tabs,
-  SegmentedControl,
+  Chip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -251,7 +251,7 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   const [positionHistory, setPositionHistory] = useState<PositionPoint[]>([]);
   const [timeSeriesHistory, setTimeSeriesHistory] = useState<TimeSeriesPoint[]>([]);
   const [logLines, setLogLines] = useState<string[]>([]);
-  const [chartView, setChartView] = useState<'scatter' | 'series' | 'skysnr'>('scatter');
+  const [chartViews, setChartViews] = useState<string[]>(['scatter']);
   const [satellites, setSatellites] = useState<Satellite[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const logEndRef = useRef<HTMLDivElement | null>(null);
@@ -587,29 +587,38 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
                   <Tabs.Tab value="console" style={{ fontSize: 11 }}>Console</Tabs.Tab>
                   <Tabs.Tab value="trace" style={{ fontSize: 11 }}>Trace</Tabs.Tab>
                 </Tabs.List>
-                <SegmentedControl
-                  size="xs"
-                  value={chartView}
-                  onChange={(v) => setChartView(v as 'scatter' | 'series' | 'skysnr')}
-                  data={[
-                    { label: 'Scatter', value: 'scatter' },
-                    { label: 'Series', value: 'series' },
-                    { label: 'Sky+SNR', value: 'skysnr' },
-                  ]}
-                  styles={{ root: { marginRight: 4 } }}
-                />
+                {/* Multi-select: show one or more charts side by side */}
+                <Chip.Group
+                  multiple
+                  value={chartViews}
+                  onChange={(v) => { if (v.length) setChartViews(v); }}
+                >
+                  <Group gap={6} wrap="nowrap" style={{ marginRight: 4 }}>
+                    <Chip value="scatter" size="xs" variant="light">Map</Chip>
+                    <Chip value="skysnr" size="xs" variant="light">Sky / SNR</Chip>
+                    <Chip value="series" size="xs" variant="light">Time series</Chip>
+                  </Group>
+                </Chip.Group>
               </Group>
 
               <Tabs.Panel value="chart" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
-                {chartView === 'scatter' && (
-                  <PositionScatter points={positionHistory} maxPoints={MAX_HISTORY} />
-                )}
-                {chartView === 'series' && (
-                  <TimeSeriesChart points={timeSeriesHistory} maxPoints={MAX_HISTORY} />
-                )}
-                {chartView === 'skysnr' && (
-                  <SkySnrPanel satellites={satellites} updateTime={lastPosition?.timestamp} />
-                )}
+                <div style={{ display: 'flex', gap: 10, height: '100%', minHeight: 0 }}>
+                  {chartViews.includes('scatter') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <PositionScatter points={positionHistory} maxPoints={MAX_HISTORY} />
+                    </div>
+                  )}
+                  {chartViews.includes('skysnr') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <SkySnrPanel satellites={satellites} updateTime={lastPosition?.timestamp} />
+                    </div>
+                  )}
+                  {chartViews.includes('series') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <TimeSeriesChart points={timeSeriesHistory} maxPoints={MAX_HISTORY} />
+                    </div>
+                  )}
+                </div>
               </Tabs.Panel>
 
               <Tabs.Panel value="solution" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
