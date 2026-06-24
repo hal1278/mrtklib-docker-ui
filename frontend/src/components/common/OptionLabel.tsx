@@ -10,6 +10,40 @@ interface OptionLabelProps {
   style?: CSSProperties;
 }
 
+/**
+ * Just the `?` help icon + tooltip for a metaKey, for compact/combined rows
+ * where the full OptionLabel does not fit. Renders nothing unless the option
+ * has a description, so it can be dropped after every input safely.
+ */
+export function MetaHelp({ metaKey }: { metaKey: OptionMetaKey }) {
+  const meta: OptionMeta | undefined = OPTION_META[metaKey];
+  if (!meta?.description) return null;
+  return (
+    <Tooltip
+      label={meta.description}
+      multiline
+      w={260}
+      withArrow
+      position="top"
+      events={{ hover: true, focus: true, touch: true }}
+    >
+      <ActionIcon
+        component="a"
+        href={meta.docsAnchor ? DOCS_BASE + meta.docsAnchor : undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        size={14}
+        variant="subtle"
+        color="gray"
+        aria-label={`Open help for ${meta.label ?? metaKey}`}
+        style={{ flexShrink: 0 }}
+      >
+        <IconQuestionMark size={10} />
+      </ActionIcon>
+    </Tooltip>
+  );
+}
+
 export function OptionLabel({ metaKey, fallback, style }: OptionLabelProps) {
   const meta: OptionMeta | undefined = OPTION_META[metaKey];
   const label = meta?.label ?? fallback ?? metaKey;

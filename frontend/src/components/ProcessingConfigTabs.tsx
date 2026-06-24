@@ -64,7 +64,7 @@ import type {
 import { SnrMaskModal } from './SnrMaskModal';
 import { SignalSelectModal } from './SignalSelectModal';
 import { FileBrowserModal } from './FileBrowserModal';
-import { OptionLabel } from './common/OptionLabel';
+import { OptionLabel, MetaHelp } from './common/OptionLabel';
 import { useModeDependentDisable } from '../hooks/useModeDependentDisable';
 import { DOCS_BASE as OPTION_DOCS_BASE } from '../config/optionMeta';
 import { SECTION_SEARCH_TEXT } from '../config/sectionSearchIndex';
@@ -1537,63 +1537,32 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     style={{ flex: 1 }}
                   />
                 </Group>
+                {/* Per-system AR — GLO / BDS / QZS on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.glonass_ar" style={OPT_LABEL_STYLE} />
-                  <Select
-                    size="xs"
-                    value={config.ambiguityResolution.glonassAr}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, glonassAr: value },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                      { value: 'autocal', label: 'AutoCal' },
-                    ]}
-                    disabled={modeDisabled('ar.glonass_ar')}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.bds_ar" style={OPT_LABEL_STYLE} />
-                  <Select
-                    size="xs"
-                    value={config.ambiguityResolution.bdsAr}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, bdsAr: value },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                    ]}
-                    disabled={modeDisabled('ar.bds_ar')}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.qzs_ar" style={OPT_LABEL_STYLE} />
-                  <Select
-                    size="xs"
-                    value={config.ambiguityResolution.qzsAr}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, qzsAr: value },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                    ]}
-                    disabled={modeDisabled('ar.qzs_ar')}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Per-system AR</Text>
+                  <Group wrap="nowrap" align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={4} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <Text c="dimmed" style={{ fontSize: '9px', flexShrink: 0 }}>GLO</Text>
+                      <Select size="xs" value={config.ambiguityResolution.glonassAr}
+                        onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, glonassAr: value } })}
+                        data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }, { value: 'autocal', label: 'AutoCal' }]}
+                        disabled={modeDisabled('ar.glonass_ar')} style={{ flex: 1, minWidth: 0 }} />
+                    </Group>
+                    <Group gap={4} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <Text c="dimmed" style={{ fontSize: '9px', flexShrink: 0 }}>BDS</Text>
+                      <Select size="xs" value={config.ambiguityResolution.bdsAr}
+                        onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, bdsAr: value } })}
+                        data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
+                        disabled={modeDisabled('ar.bds_ar')} style={{ flex: 1, minWidth: 0 }} />
+                    </Group>
+                    <Group gap={4} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <Text c="dimmed" style={{ fontSize: '9px', flexShrink: 0 }}>QZS</Text>
+                      <Select size="xs" value={config.ambiguityResolution.qzsAr}
+                        onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, qzsAr: value } })}
+                        data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
+                        disabled={modeDisabled('ar.qzs_ar')} style={{ flex: 1, minWidth: 0 }} />
+                    </Group>
+                  </Group>
                 </Group>
               </Stack>
 
@@ -1619,77 +1588,78 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     style={{ flex: 1 }}
                   />
                 </Group>
+                {/* Elevation Mask: AR / Hold on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.elevation_mask" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.thresholds.elevationMask}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, thresholds: { ...config.ambiguityResolution.thresholds, elevationMask: Number(value) } },
-                      })
-                    }
-                    min={0}
-                    max={90}
-                    hideControls
-                    disabled={modeDisabled('ar.thresholds.elevation_mask')}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Elev. Mask AR/Hold (°)</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="AR Elevation Mask"
+                        value={config.ambiguityResolution.thresholds.elevationMask}
+                        onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, thresholds: { ...config.ambiguityResolution.thresholds, elevationMask: Number(value) } } })}
+                        min={0} max={90} hideControls disabled={modeDisabled('ar.thresholds.elevation_mask')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>AR</Text>} leftSectionWidth={28}
+                        style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.thresholds.elevation_mask" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Hold Elevation Mask"
+                        value={config.ambiguityResolution.thresholds.holdElevation}
+                        onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, thresholds: { ...config.ambiguityResolution.thresholds, holdElevation: Number(value) } } })}
+                        min={0} max={90} hideControls disabled={modeDisabled('ar.thresholds.hold_elevation')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Hold</Text>} leftSectionWidth={32}
+                        style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.thresholds.hold_elevation" />
+                    </Group>
+                  </Group>
+                </Group>
+                {/* Ratio 1–6 paired 2 per row */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ratio 1 / 2</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Ratio 1" value={config.ambiguityResolution.thresholds.ratio1}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio1: Number(value)}}})}
+                        decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio1')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>1</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.thresholds.ratio1" />
+                    </Group>
+                    <NumberInput size="xs" aria-label="Ratio 2" value={config.ambiguityResolution.thresholds.ratio2}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio2: Number(value)}}})}
+                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio2')}
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>2</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.hold_elevation" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.thresholds.holdElevation}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, thresholds: { ...config.ambiguityResolution.thresholds, holdElevation: Number(value) } },
-                      })
-                    }
-                    min={0}
-                    max={90}
-                    hideControls
-                    disabled={modeDisabled('ar.thresholds.hold_elevation')}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ratio 3 / 4</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" aria-label="Ratio 3" value={config.ambiguityResolution.thresholds.ratio3}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio3: Number(value)}}})}
+                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio3')}
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>3</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" aria-label="Ratio 4" value={config.ambiguityResolution.thresholds.ratio4}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio4: Number(value)}}})}
+                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio4')}
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>4</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio1" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio1}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio1: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio1')} style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio2" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio2}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio2: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio2')} style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio3" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio3}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio3: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio3')} style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio4" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio4}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio4: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio4')} style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio5" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio5}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio5: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio5')} style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.thresholds.ratio6" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.thresholds.ratio6}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio6: Number(value)}}})}
-                    decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio6')} style={{flex:1}} />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ratio 5 / 6</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Ratio 5" value={config.ambiguityResolution.thresholds.ratio5}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio5: Number(value)}}})}
+                        decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio5')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>5</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.thresholds.ratio5" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Ratio 6" value={config.ambiguityResolution.thresholds.ratio6}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio6: Number(value)}}})}
+                        decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio6')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>6</Text>} leftSectionWidth={14} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.thresholds.ratio6" />
+                    </Group>
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <OptionLabel metaKey="ar.thresholds.alpha" style={OPT_LABEL_STYLE} />
@@ -1703,114 +1673,64 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               {/* AR Counters */}
               <Divider my={4} />
               <Stack gap={6}>
+                {/* Lock Count + Min Fix Epochs on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.counters.lock_count" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.counters.lockCount}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, counters: { ...config.ambiguityResolution.counters, lockCount: Number(value) } },
-                      })
-                    }
-                    min={0}
-                    hideControls
-                    disabled={modeDisabled('ar.counters.lock_count')}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Lock Cnt / Fix Ep</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Lock Count" value={config.ambiguityResolution.counters.lockCount}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, counters: {...config.ambiguityResolution.counters, lockCount: Number(value)}}})}
+                        min={0} hideControls disabled={modeDisabled('ar.counters.lock_count')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Lock</Text>} leftSectionWidth={32} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.counters.lock_count" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Min Fix Epochs" value={config.ambiguityResolution.counters.minFix}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, counters: {...config.ambiguityResolution.counters, minFix: Number(value)}}})}
+                        min={0} hideControls disabled={modeDisabled('ar.counters.min_fix')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Fix</Text>} leftSectionWidth={26} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.counters.min_fix" />
+                    </Group>
+                  </Group>
                 </Group>
+                {/* Max Iterations + Outage Reset Count on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.counters.min_fix" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.counters.minFix}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, counters: { ...config.ambiguityResolution.counters, minFix: Number(value) } },
-                      })
-                    }
-                    min={0}
-                    hideControls
-                    disabled={modeDisabled('ar.counters.min_fix')}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.counters.max_iterations" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.counters.maxIterations}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, counters: { ...config.ambiguityResolution.counters, maxIterations: Number(value) } },
-                      })
-                    }
-                    min={1}
-                    max={10}
-                    hideControls
-                    disabled={modeDisabled('ar.counters.max_iterations')}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.counters.out_count" style={OPT_LABEL_STYLE} />
-                  <NumberInput
-                    size="xs"
-                    value={config.ambiguityResolution.counters.outCount}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        ambiguityResolution: { ...config.ambiguityResolution, counters: { ...config.ambiguityResolution.counters, outCount: Number(value) } },
-                      })
-                    }
-                    min={0}
-                    step={1}
-                    hideControls
-                    disabled={modeDisabled('ar.counters.out_count')}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Iter / Out Cnt</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Max LAMBDA Iterations" value={config.ambiguityResolution.counters.maxIterations}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, counters: {...config.ambiguityResolution.counters, maxIterations: Number(value)}}})}
+                        min={1} max={10} hideControls disabled={modeDisabled('ar.counters.max_iterations')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Iter</Text>} leftSectionWidth={26} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.counters.max_iterations" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Outage Reset Count" value={config.ambiguityResolution.counters.outCount}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, counters: {...config.ambiguityResolution.counters, outCount: Number(value)}}})}
+                        min={0} step={1} hideControls disabled={modeDisabled('ar.counters.out_count')}
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Out</Text>} leftSectionWidth={26} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.counters.out_count" />
+                    </Group>
+                  </Group>
                 </Group>
               </Stack>
 
               {/* Rejection */}
               <Divider my={4} />
               <Stack gap={6}>
+                {/* Innovation + GDOP on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Innovation (m)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.rejection.innovation}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        rejection: { ...config.rejection, innovation: Number(value) },
-                      })
-                    }
-                    min={0}
-                    step={1}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>GDOP</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.rejection.gdop}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        rejection: { ...config.rejection, gdop: Number(value) },
-                      })
-                    }
-                    min={0}
-                    step={1}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Innovation / GDOP</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" aria-label="Innovation (m)" value={config.rejection.innovation}
+                      onChange={(value: any) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(value)}})}
+                      min={0} step={1} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Inn</Text>} leftSectionWidth={26} style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" aria-label="GDOP" value={config.rejection.gdop}
+                      onChange={(value: any) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(value)}})}
+                      min={0} step={1} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>GDOP</Text>} leftSectionWidth={34} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
 
@@ -1840,42 +1760,54 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               {/* Partial AR */}
               <SectionHeader title="Partial AR" anchor="partial-ar" />
               <Stack gap={6}>
+                {/* Min Ambiguities + Max Excluded Sats */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.partial_ar.min_ambiguities" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.partialAr.minAmbiguities}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minAmbiguities: Number(value)}}})}
-                    disabled={modeDisabled('ar.partial_ar.min_ambiguities')}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Min Amb / Max Excl</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Min Ambiguities" value={config.ambiguityResolution.partialAr.minAmbiguities}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minAmbiguities: Number(value)}}})}
+                        disabled={modeDisabled('ar.partial_ar.min_ambiguities')} decimalScale={4} hideControls
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Amb</Text>} leftSectionWidth={30} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.partial_ar.min_ambiguities" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Max Excluded Sats" value={config.ambiguityResolution.partialAr.maxExcludedSats}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, maxExcludedSats: Number(value)}}})}
+                        disabled={modeDisabled('ar.partial_ar.max_excluded_sats')} decimalScale={4} hideControls
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Excl</Text>} leftSectionWidth={32} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.partial_ar.max_excluded_sats" />
+                    </Group>
+                  </Group>
                 </Group>
+                {/* Min Fix / Drop / Hold Pairs */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.partial_ar.max_excluded_sats" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.partialAr.maxExcludedSats}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, maxExcludedSats: Number(value)}}})}
-                    disabled={modeDisabled('ar.partial_ar.max_excluded_sats')}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Min Pairs</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Min Fix Pairs" value={config.ambiguityResolution.partialAr.minFixSats}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minFixSats: Number(value)}}})}
+                        disabled={modeDisabled('ar.partial_ar.min_fix_sats')} decimalScale={4} hideControls
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Fix</Text>} leftSectionWidth={26} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.partial_ar.min_fix_sats" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Min Drop Pairs" value={config.ambiguityResolution.partialAr.minDropSats}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minDropSats: Number(value)}}})}
+                        disabled={modeDisabled('ar.partial_ar.min_drop_sats')} decimalScale={4} hideControls
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Drop</Text>} leftSectionWidth={32} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.partial_ar.min_drop_sats" />
+                    </Group>
+                    <Group gap={1} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                      <NumberInput size="xs" aria-label="Min Hold Pairs" value={config.ambiguityResolution.partialAr.minHoldSats}
+                        onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minHoldSats: Number(value)}}})}
+                        disabled={modeDisabled('ar.partial_ar.min_hold_sats')} decimalScale={4} hideControls
+                        leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Hold</Text>} leftSectionWidth={32} style={{ flex: 1, minWidth: 0 }} />
+                      <MetaHelp metaKey="ar.partial_ar.min_hold_sats" />
+                    </Group>
+                  </Group>
                 </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.partial_ar.min_fix_sats" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.partialAr.minFixSats}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minFixSats: Number(value)}}})}
-                    disabled={modeDisabled('ar.partial_ar.min_fix_sats')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.partial_ar.min_drop_sats" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.partialAr.minDropSats}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minDropSats: Number(value)}}})}
-                    disabled={modeDisabled('ar.partial_ar.min_drop_sats')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="ar.partial_ar.min_hold_sats" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.ambiguityResolution.partialAr.minHoldSats}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, partialAr: {...config.ambiguityResolution.partialAr, minHoldSats: Number(value)}}})}
-                    disabled={modeDisabled('ar.partial_ar.min_hold_sats')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <OptionLabel metaKey="ar.partial_ar.ar_filter" style={OPT_LABEL_STYLE} />
                   <Switch size="xs" checked={config.ambiguityResolution.partialAr.arFilter}
                     disabled={modeDisabled('ar.partial_ar.ar_filter')}
@@ -1887,16 +1819,17 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <SectionHeader title="Hold" anchor="ar-hold" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Variance</Text>
-                  <NumberInput size="xs" value={config.ambiguityResolution.hold.variance}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, variance: Number(value)}}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Gain</Text>
-                  <NumberInput size="xs" value={config.ambiguityResolution.hold.gain}
-                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, gain: Number(value)}}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Variance / Gain</Text>
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" aria-label="Hold Variance" value={config.ambiguityResolution.hold.variance}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, variance: Number(value)}}})}
+                      decimalScale={4} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Var</Text>} leftSectionWidth={28} style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" aria-label="Hold Gain" value={config.ambiguityResolution.hold.gain}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, gain: Number(value)}}})}
+                      decimalScale={4} hideControls
+                      leftSection={<Text c="dimmed" style={{ fontSize: '9px' }}>Gain</Text>} leftSectionWidth={32} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
             </Stack>
