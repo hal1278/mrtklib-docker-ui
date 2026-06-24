@@ -904,58 +904,64 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     style={{ flex: 1 }}
                   />
                 </Group>
+                {/* Freq. / Signals — Frequency primary, Signals an advanced override */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="positioning.frequency" style={OPT_LABEL_STYLE} />
-                  <Select
-                    size="xs"
-                    value={config.positioning.frequency}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        positioning: { ...config.positioning, frequency: value as Frequency },
-                      })
-                    }
-                    data={[
-                      { value: 'l1', label: 'L1' },
-                      { value: 'l1+l2', label: 'L1+2' },
-                      { value: 'l1+l2+l5', label: 'L1+2+3' },
-                      { value: 'l1+l2+l5+l6', label: 'L1+2+3+4' },
-                      { value: 'l1+l2+l5+l6+l7', label: 'L1+2+3+4+5' },
-                    ]}
-                    disabled={isSingle || useSignals}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>
-                    Signals {isMadocaPPP && <Text span size="xs" c="dimmed">(N/A)</Text>}
-                  </Text>
-                  <Button
-                    size="xs"
-                    variant="light"
-                    onClick={() => setSignalSelectOpened(true)}
-                    disabled={!canUseSignals}
-                    style={{ flex: 1 }}
-                  >
-                    {config.positioning.signals
-                      ? `${config.positioning.signals.split(',').filter(Boolean).length} signals`
-                      : 'Select Signals...'}
-                  </Button>
-                  {canUseSignals && config.positioning.signals && (
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      size="sm"
-                      onClick={() =>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Freq. / Signals</Text>
+                  <Group wrap="nowrap" align="center" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select
+                      size="xs"
+                      value={config.positioning.frequency}
+                      onChange={(value: any) =>
                         handleConfigChange({
                           ...config,
-                          positioning: { ...config.positioning, signals: '' },
+                          positioning: { ...config.positioning, frequency: value as Frequency },
                         })
                       }
+                      data={[
+                        { value: 'l1', label: 'L1' },
+                        { value: 'l1+l2', label: 'L1+2' },
+                        { value: 'l1+l2+l5', label: 'L1+2+3' },
+                        { value: 'l1+l2+l5+l6', label: 'L1+2+3+4' },
+                        { value: 'l1+l2+l5+l6+l7', label: 'L1+2+3+4+5' },
+                      ]}
+                      disabled={isSingle || useSignals}
+                      style={{ flex: 1, minWidth: 0 }}
+                    />
+                    {useSignals && (
+                      <Text c="dimmed" fs="italic" style={{ fontSize: '9px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        overridden
+                      </Text>
+                    )}
+                    <Button
+                      size="xs"
+                      variant={useSignals ? 'filled' : 'light'}
+                      onClick={() => setSignalSelectOpened(true)}
+                      disabled={!canUseSignals}
+                      style={{ flexShrink: 0 }}
                     >
-                      <IconX size={12} />
-                    </ActionIcon>
-                  )}
+                      {isMadocaPPP
+                        ? 'N/A'
+                        : useSignals
+                          ? `${config.positioning.signals.split(',').filter(Boolean).length} signals`
+                          : 'Signals…'}
+                    </Button>
+                    {useSignals && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        style={{ flexShrink: 0 }}
+                        onClick={() =>
+                          handleConfigChange({
+                            ...config,
+                            positioning: { ...config.positioning, signals: '' },
+                          })
+                        }
+                      >
+                        <IconX size={12} />
+                      </ActionIcon>
+                    )}
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <OptionLabel metaKey="positioning.dynamics" style={OPT_LABEL_STYLE} />
