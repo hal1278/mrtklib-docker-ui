@@ -38,6 +38,7 @@ import {
 } from '@tabler/icons-react';
 import { PostProcessingConfiguration  } from './components';
 import { ResultViewer } from './components/viewer';
+import { ConsoleFrame } from './components/ConsoleFrame';
 import { RealTimeProcessing } from './components/RealTimeProcessing';
 import { ConversionPanel } from './components/ConversionPanel';
 import { StreamPathHelp } from './components/StreamPathHelp';
@@ -475,7 +476,7 @@ function SolutionView({
   );
 }
 
-function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean }) {
+function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void }) {
   const [roverFile, setRoverFile] = useState('/workspace/rover.obs');
   const [baseFile, setBaseFile] = useState('');
   const [navFile, setNavFile] = useState('/workspace/nav.nav');
@@ -655,9 +656,10 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
 
   return (
     <>
-    <Grid gutter="md">
-      {/* Left Column: Configuration & Control */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+    <ConsoleFrame
+      configOpen={configOpen}
+      onToggleConfig={onToggleConfig ?? (() => {})}
+      config={
         <Stack gap="xs">
           <PostProcessingConfiguration
             onConfigChange={setConfig}
@@ -681,6 +683,7 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
             onExportConf={handleExportConf}
             onQcPreview={() => setQcModalOpened(true)}
             roverFileValid={!!roverFile}
+            onCollapse={onToggleConfig}
           />
 
           {/* Error Display */}
@@ -690,10 +693,8 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
             </Alert>
           )}
         </Stack>
-      </Grid.Col>
-
-      {/* Right Column: Monitoring */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+      }
+      workspace={
         <PostProcessingRightPanel
           processStatus={processStatus}
           progress={progress}
@@ -701,9 +702,8 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
           outputFile={outputFile}
           onClearLog={() => setLogLines([])}
         />
-      </Grid.Col>
-
-    </Grid>
+      }
+    />
 
     <ObsViewerModal
       opened={qcModalOpened}
@@ -1253,8 +1253,8 @@ function StreamServerWithCLAS() {
   );
 }
 
-function RealTimePanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean }) {
-  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} />;
+function RealTimePanel({ onNavigateToAiSettings, aiConfigured, configOpen, onToggleConfig }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void }) {
+  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} configOpen={configOpen} onToggleConfig={onToggleConfig} />;
 }
 
 // ConversionPanel is now imported from ./components/ConversionPanel
@@ -1307,6 +1307,8 @@ function StatusBar({ activeTab, mrtkVersion }: { activeTab: string; mrtkVersion:
 
 function App() {
   const [activeTab, setActiveTab] = useState<string | null>('realtime');
+  const [configOpen, setConfigOpen] = useState(true);
+  const toggleConfig = useCallback(() => setConfigOpen((o) => !o), []);
   const [healthStatus, setHealthStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [mrtkVersion, setMrtkVersion] = useState<string>('');
   const [selectedTool, setSelectedTool] = useState('time-converter');
@@ -1422,10 +1424,10 @@ function App() {
 
         {/* Tab Content - keep all panels mounted to preserve state */}
         <div style={{ display: activeTab === 'post-processing' ? undefined : 'none' }}>
-          <PostProcessingPanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} />
+          <PostProcessingPanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} />
         </div>
         <div style={{ display: activeTab === 'realtime' ? undefined : 'none' }}>
-          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} />
+          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} />
         </div>
         <div style={{ display: activeTab === 'stream-server' ? undefined : 'none' }}>
           <StreamServerWithCLAS />

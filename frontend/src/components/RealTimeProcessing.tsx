@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocalStorage, useDisclosure } from '@mantine/hooks';
 import {
   Card,
-  Grid,
   Stack,
   Select,
   SimpleGrid,
@@ -55,6 +54,7 @@ import { PositionScatter, type PositionPoint } from './PositionScatter';
 import { SkySnrPanel, type Satellite } from './SkySnrPanel';
 import { TimeSeriesChart, type TimeSeriesPoint } from './TimeSeriesChart';
 import { MaskedPathInput } from './common/MaskedPathInput';
+import { ConsoleFrame, ConfigCollapseButton } from './ConsoleFrame';
 import { maskLogLine } from '../utils/maskPath';
 
 // ─── Stream editor sub-component ────────────────────────────────────────────
@@ -194,9 +194,11 @@ interface RealTimeProcessingProps {
   onConfigChange?: (config: MrtkPostConfig) => void;
   onNavigateToAiSettings?: () => void;
   aiConfigured?: boolean;
+  configOpen?: boolean;
+  onToggleConfig?: () => void;
 }
 
-export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured }: RealTimeProcessingProps) {
+export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig }: RealTimeProcessingProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
     key: 'mrtklib-web-ui-mrtk-run-config-v2',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
@@ -382,13 +384,17 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
 
   return (
     <>
-    <Grid gutter="md">
-      {/* Left Column: Configuration */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+    <ConsoleFrame
+      configOpen={configOpen}
+      onToggleConfig={onToggleConfig ?? (() => {})}
+      config={
         <Card withBorder p="xs">
           <Stack gap={4}>
             <Group justify="space-between">
-              <Title order={6} size="xs">Processing Configuration</Title>
+              <Group gap="xs">
+                {onToggleConfig && <ConfigCollapseButton onClick={onToggleConfig} />}
+                <Title order={6} size="xs">Processing Configuration</Title>
+              </Group>
               <Group gap="xs">
                 {runStatus !== 'idle' && (
                   <Badge color={isRunning ? 'green' : runStatus === 'error' ? 'red' : 'gray'} variant="dot" size="sm">
@@ -533,10 +539,8 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
             />
           </Stack>
         </Card>
-      </Grid.Col>
-
-      {/* Right Column: Monitor (always visible) */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+      }
+      workspace={
         <Card withBorder p="xs" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Stack gap={6} style={{ flex: 1, minHeight: 0 }}>
 
@@ -699,8 +703,8 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
 
           </Stack>
         </Card>
-      </Grid.Col>
-    </Grid>
+      }
+    />
     <TomlDrawer config={config} opened={tomlOpened} onClose={closeToml} streams={{
       'input.rover': streams.input.rover,
       'input.base': { type: streams.input.base.type, path: streams.input.base.path, format: streams.input.base.format },
