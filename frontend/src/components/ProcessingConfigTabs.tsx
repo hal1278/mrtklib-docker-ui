@@ -1957,63 +1957,73 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               {/* Rejection Criteria (merged from the former Advanced section) */}
               <SectionHeader title="Rejection Criteria" anchor="rejection" />
               <Stack gap={6}>
+                {/* Innovation Threshold + L1/L2 Residual */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.innovation" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.innovation}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(v)}})}
-                    disabled={modeDisabled('rejection.innovation')}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <ComboLabel label="Innov Thr / Res L1/L2" style={OPT_LABEL_STYLE}
+                    fields={[
+                      { name: 'Innovation Threshold', metaKey: 'rejection.innovation' },
+                      { name: 'L1/L2 Residual', metaKey: 'rejection.l1_l2_residual' },
+                    ]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Innovation Threshold" aria-label="Innovation Threshold" value={config.rejection.innovation}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, innovation: Number(v)}})}
+                      disabled={modeDisabled('rejection.innovation')} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="L1/L2 Residual" aria-label="L1/L2 Residual" value={config.rejection.l1L2Residual}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, l1L2Residual: Number(v)}})}
+                      disabled={modeDisabled('rejection.l1_l2_residual')} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
+                {/* Dispersive + Non-Dispersive Residual */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.l1_l2_residual" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.l1L2Residual}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, l1L2Residual: Number(v)}})}
-                    disabled={modeDisabled('rejection.l1_l2_residual')}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <ComboLabel label="Disp / Non-Disp Res" style={OPT_LABEL_STYLE}
+                    fields={[
+                      { name: 'Dispersive Residual', metaKey: 'rejection.dispersive' },
+                      { name: 'Non-Dispersive Residual', metaKey: 'rejection.non_dispersive' },
+                    ]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Dispersive Residual" aria-label="Dispersive Residual" value={config.rejection.dispersive}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, dispersive: Number(v)}})}
+                      disabled={modeDisabled('rejection.dispersive')} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Non-Dispersive Residual" aria-label="Non-Dispersive Residual" value={config.rejection.nonDispersive}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, nonDispersive: Number(v)}})}
+                      disabled={modeDisabled('rejection.non_dispersive')} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
+                {/* Hold + Fix Chi-Square */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.dispersive" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.dispersive}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, dispersive: Number(v)}})}
-                    disabled={modeDisabled('rejection.dispersive')}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <ComboLabel label="Chi-Square Hold/Fix" style={OPT_LABEL_STYLE}
+                    fields={[
+                      { name: 'Hold Chi-Square' },
+                      { name: 'Fix Chi-Square' },
+                    ]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Hold Chi-Square" aria-label="Hold Chi-Square" value={config.rejection.holdChiSquare}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, holdChiSquare: Number(v)}})}
+                      decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Fix Chi-Square" aria-label="Fix Chi-Square" value={config.rejection.fixChiSquare}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, fixChiSquare: Number(v)}})}
+                      decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
+                {/* Max GDOP + Pseudorange Diff + Pos Error Count */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.non_dispersive" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.nonDispersive}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, nonDispersive: Number(v)}})}
-                    disabled={modeDisabled('rejection.non_dispersive')}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Hold Chi-Square</Text>
-                  <NumberInput size="xs" value={config.rejection.holdChiSquare}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, holdChiSquare: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Fix Chi-Square</Text>
-                  <NumberInput size="xs" value={config.rejection.fixChiSquare}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, fixChiSquare: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="rejection.gdop" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.rejection.gdop}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pseudorange Diff</Text>
-                  <NumberInput size="xs" value={config.rejection.pseudorangeDiff}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, pseudorangeDiff: Number(v)}})}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Pos Error Count</Text>
-                  <NumberInput size="xs" value={config.rejection.positionErrorCount}
-                    onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, positionErrorCount: Number(v)}})}
-                    decimalScale={0} hideControls style={{flex:1}} />
+                  <ComboLabel label="Max GDOP / PRdiff / PosErr" style={OPT_LABEL_STYLE}
+                    fields={[
+                      { name: 'Max GDOP', metaKey: 'rejection.gdop' },
+                      { name: 'Pseudorange Diff' },
+                      { name: 'Pos Error Count' },
+                    ]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Max GDOP" aria-label="Max GDOP" value={config.rejection.gdop}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, gdop: Number(v)}})}
+                      decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Pseudorange Diff" aria-label="Pseudorange Diff" value={config.rejection.pseudorangeDiff}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, pseudorangeDiff: Number(v)}})}
+                      decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Pos Error Count" aria-label="Pos Error Count" value={config.rejection.positionErrorCount}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, positionErrorCount: Number(v)}})}
+                      decimalScale={0} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
             </Stack>
