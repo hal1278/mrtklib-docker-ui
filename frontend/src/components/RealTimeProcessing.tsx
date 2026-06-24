@@ -16,7 +16,6 @@ import {
   ScrollArea,
   Tabs,
   SegmentedControl,
-  Box,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -642,24 +641,6 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
                 </ScrollArea>
               </Tabs.Panel>
             </Tabs>
-
-            {/* 5. Console strip (always visible) */}
-            <Box
-              style={{
-                height: 72,
-                overflow: 'hidden',
-                backgroundColor: 'var(--app-surface, var(--mantine-color-dark-7))',
-                borderRadius: 4,
-                padding: '4px 8px',
-              }}
-            >
-              <Text c="dimmed" tt="uppercase" style={{ fontSize: 9, lineHeight: 1.2, marginBottom: 2 }}>Console</Text>
-              <Text ff="monospace" c="dimmed" style={{ whiteSpace: 'pre-wrap', fontSize: 9, lineHeight: 1.35 }}>
-                {logLines.length > 0
-                  ? logLines.slice(-4).map(maskLogLine).join('\n')
-                  : 'No log output yet.'}
-              </Text>
-            </Box>
 
           </Stack>
         </Card>
