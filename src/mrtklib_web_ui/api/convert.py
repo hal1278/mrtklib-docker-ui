@@ -7,9 +7,16 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from mrtklib_web_ui.paths import is_allowed_path
+from mrtklib_web_ui.paths import (
+    MRTK_BIN,
+    WORKSPACE_ROOT,
+    is_allowed_path,
+    is_within,
+    path_within_root,
+    resolve_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +25,7 @@ router = APIRouter()
 # Connected WebSocket clients
 _ws_clients: set[WebSocket] = set()
 _process: Optional[asyncio.subprocess.Process] = None
+_process_lock = asyncio.Lock()
 
 
 async def _broadcast(msg: dict[str, Any]) -> None:
@@ -71,7 +79,7 @@ class ConvertRequest(BaseModel):
 
 
 def build_convert_cmd(req: ConvertRequest) -> list[str]:
-    cmd = ["/usr/local/bin/mrtk", "convert"]
+    cmd = [str(MRTK_BIN), "convert"]
     if req.format:
         cmd += ["-r", req.format]
     if req.receiver_options:
@@ -141,96 +149,149 @@ class ConvertResponse(BaseModel):
     command: str = ""
 
 
+def _validate_input_file(path: str) -> str:
+    resolved = resolve_path(path)
+
+    if not is_allowed_path(resolved):
+        raise HTTPException(status_code=403, detail=f"Input file access denied: {path}")
+    if not resolved.exists():
+        raise HTTPException(status_code=400, detail=f"Input file not found: {path}")
+    if not resolved.is_file():
+        raise HTTPException(status_code=400, detail=f"Input path is not a file: {path}")
+
+    return str(resolved)
+
+
+def _validate_output_file(path: str, label: str) -> str:
+    resolved = resolve_path(path)
+
+    if not is_within(resolved, WORKSPACE_ROOT):
+        raise HTTPException(status_code=403, detail=f"{label} must be within /workspace: {path}")
+    if resolved.exists() and resolved.is_dir():
+        raise HTTPException(status_code=400, detail=f"{label} must not be a directory: {path}")
+
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    return str(resolved)
+
+
+def _validate_output_dir(path: str) -> str:
+    resolved = resolve_path(path)
+
+    if not path_within_root(resolved, WORKSPACE_ROOT):
+        raise HTTPException(status_code=403, detail=f"Output directory must be within /workspace: {path}")
+    if resolved.exists() and not resolved.is_dir():
+        raise HTTPException(status_code=400, detail=f"Output directory is not a directory: {path}")
+
+    resolved.mkdir(parents=True, exist_ok=True)
+    return str(resolved)
+
+
+def resolve_convert_request(request: ConvertRequest) -> ConvertRequest:
+    """Translate UI logical paths to runtime paths before invoking mrtk."""
+    updates: dict[str, str] = {
+        "input_file": _validate_input_file(request.input_file),
+    }
+
+    if request.output_obs:
+        updates["output_obs"] = _validate_output_file(request.output_obs, "Observation output")
+    if request.output_nav:
+        updates["output_nav"] = _validate_output_file(request.output_nav, "Navigation output")
+    if request.output_dir:
+        updates["output_dir"] = _validate_output_dir(request.output_dir)
+
+    return request.model_copy(update=updates)
+
+
 @router.post("/start")
 async def start_convert(request: ConvertRequest) -> ConvertResponse:
     """Start mrtk convert process."""
     global _process
-    if _process and _process.returncode is None:
-        return ConvertResponse(status="error", message="Conversion already running")
+    async with _process_lock:
+        if _process and _process.returncode is None:
+            return ConvertResponse(status="error", message="Conversion already running")
 
-    cmd = build_convert_cmd(request)
-    cmd_str = " ".join(cmd)
-    await _broadcast({"type": "log", "message": f"[CMD] {cmd_str}"})
+        request = resolve_convert_request(request)
+        cmd = build_convert_cmd(request)
+        cmd_str = " ".join(cmd)
+        await _broadcast({"type": "log", "message": f"[CMD] {cmd_str}"})
 
-    try:
-        _process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        async def read_stream(stream, prefix=""):
-            import time as _time
-            buf = b""
-            last_progress = ""
-            last_progress_time = 0.0
-            while True:
-                chunk = await stream.read(4096)
-                if not chunk:
-                    break
-                buf += chunk
-                # Split on \r or \n
-                while b"\r" in buf or b"\n" in buf:
-                    r_pos = buf.find(b"\r")
-                    n_pos = buf.find(b"\n")
-                    if r_pos == -1:
-                        pos = n_pos
-                    elif n_pos == -1:
-                        pos = r_pos
-                    else:
-                        pos = min(r_pos, n_pos)
-                    line = buf[:pos].decode("utf-8", errors="replace").strip()
-                    # Skip \r\n combo
-                    if pos + 1 < len(buf) and buf[pos:pos + 2] == b"\r\n":
-                        buf = buf[pos + 2:]
-                    else:
-                        buf = buf[pos + 1:]
-                    if not line:
-                        continue
-                    # Throttle CR-delimited progress lines (max 1/sec)
-                    is_progress = line.startswith("scanning:") or (": O=" in line) or (": E=" in line) or (": S=" in line)
-                    if is_progress:
-                        now = _time.monotonic()
-                        if now - last_progress_time >= 1.0:
-                            last_progress_time = now
-                            last_progress = line
-                            await _broadcast({"type": "progress", "message": f"{prefix}{line}"})
-                    else:
-                        await _broadcast({"type": "log", "message": f"{prefix}{line}"})
-            # Flush remaining
-            if buf.strip():
-                text = buf.decode("utf-8", errors="replace").strip()
-                if text:
-                    await _broadcast({"type": "log", "message": f"{prefix}{text}"})
-
-        # Run stream readers and wait for process in background
-        async def run_and_wait():
-            global _process
-            proc = _process
-            if not proc:
-                return
-            # Read stdout/stderr concurrently, then wait for exit
-            await asyncio.gather(
-                read_stream(proc.stdout, ""),
-                read_stream(proc.stderr, "[STDERR] "),
+        try:
+            _process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            await proc.wait()
-            rc = proc.returncode
-            if rc == 0:
-                await _broadcast({"type": "status", "status": "completed"})
-                await _broadcast({"type": "log", "message": "[INFO] Conversion completed successfully"})
-            else:
-                await _broadcast({"type": "status", "status": "failed"})
-                await _broadcast({"type": "log", "message": f"[ERROR] Conversion failed with exit code {rc}"})
+        except Exception as e:
+            logger.exception("Failed to start conversion")
+            return ConvertResponse(status="error", message=str(e))
+
+    async def read_stream(stream, prefix=""):
+        import time as _time
+        buf = b""
+        last_progress_time = 0.0
+        while True:
+            chunk = await stream.read(4096)
+            if not chunk:
+                break
+            buf += chunk
+            # Split on \r or \n
+            while b"\r" in buf or b"\n" in buf:
+                r_pos = buf.find(b"\r")
+                n_pos = buf.find(b"\n")
+                if r_pos == -1:
+                    pos = n_pos
+                elif n_pos == -1:
+                    pos = r_pos
+                else:
+                    pos = min(r_pos, n_pos)
+                line = buf[:pos].decode("utf-8", errors="replace").strip()
+                # Skip \r\n combo
+                if pos + 1 < len(buf) and buf[pos:pos + 2] == b"\r\n":
+                    buf = buf[pos + 2:]
+                else:
+                    buf = buf[pos + 1:]
+                if not line:
+                    continue
+                # Throttle CR-delimited progress lines (max 1/sec)
+                is_progress = line.startswith("scanning:") or (": O=" in line) or (": E=" in line) or (": S=" in line)
+                if is_progress:
+                    now = _time.monotonic()
+                    if now - last_progress_time >= 1.0:
+                        last_progress_time = now
+                        await _broadcast({"type": "progress", "message": f"{prefix}{line}"})
+                else:
+                    await _broadcast({"type": "log", "message": f"{prefix}{line}"})
+        # Flush remaining
+        if buf.strip():
+            text = buf.decode("utf-8", errors="replace").strip()
+            if text:
+                await _broadcast({"type": "log", "message": f"{prefix}{text}"})
+
+    # Run stream readers and wait for process in background
+    async def run_and_wait():
+        global _process
+        proc = _process
+        if not proc:
+            return
+        # Read stdout/stderr concurrently, then wait for exit
+        await asyncio.gather(
+            read_stream(proc.stdout, ""),
+            read_stream(proc.stderr, "[STDERR] "),
+        )
+        await proc.wait()
+        rc = proc.returncode
+        if rc == 0:
+            await _broadcast({"type": "status", "status": "completed"})
+            await _broadcast({"type": "log", "message": "[INFO] Conversion completed successfully"})
+        else:
+            await _broadcast({"type": "status", "status": "failed"})
+            await _broadcast({"type": "log", "message": f"[ERROR] Conversion failed with exit code {rc}"})
+        if _process is proc:
             _process = None
 
-        asyncio.create_task(run_and_wait())
+    asyncio.create_task(run_and_wait())
 
-        return ConvertResponse(status="ok", message="Conversion started", command=cmd_str)
-
-    except Exception as e:
-        logger.exception("Failed to start conversion")
-        return ConvertResponse(status="error", message=str(e))
+    return ConvertResponse(status="ok", message="Conversion started", command=cmd_str)
 
 
 @router.post("/stop")
@@ -272,8 +333,6 @@ async def websocket_convert(websocket: WebSocket) -> None:
 
 
 # ── Preview endpoint ────────────────────────────────────────────────────────
-
-
 
 def _parse_rinex_preview(path: Path, max_epochs: int = 5) -> dict[str, Any]:
     with open(path, "r", errors="replace") as f:
@@ -328,8 +387,8 @@ def _parse_rinex_preview(path: Path, max_epochs: int = 5) -> dict[str, Any]:
     # Count total epochs for truncation check
     total_epochs = sum(
         1
-        for l in data_lines
-        if l.startswith(">") or (len(l) > 25 and l[0] == " " and l[1:3].strip().isdigit())
+        for line in data_lines
+        if line.startswith(">") or (len(line) > 25 and line[0] == " " and line[1:3].strip().isdigit())
     )
     truncated = epoch_count <= total_epochs and epoch_count > max_epochs or total_epochs > max_epochs
 
@@ -350,7 +409,7 @@ async def preview_rinex(
     max_epochs: int = Query(default=5, ge=1, le=10, description="Number of epochs to preview"),
 ) -> dict[str, Any]:
     """Preview a RINEX file (header + first N epochs)."""
-    target = Path(path).resolve()
+    target = resolve_path(path)
 
     if not is_allowed_path(target):
         raise HTTPException(status_code=403, detail="Access denied: path outside allowed directories")

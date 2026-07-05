@@ -2,7 +2,6 @@
 
 import importlib.metadata
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
@@ -20,9 +19,7 @@ from mrtklib_web_ui.api import (
     presets, downloader, convert, ai, clas_pipeline,
 )
 from mrtklib_web_ui.services import clas_pipeline_service, process_manager, ws_manager
-
-# Static files directory (set in Docker build)
-STATIC_DIR = Path("/app/static")
+from mrtklib_web_ui.paths import MRTK_BIN, STATIC_DIR
 
 
 @asynccontextmanager
@@ -97,10 +94,7 @@ async def health_check() -> dict[str, str]:
 @app.get("/api/mrtklib/version")
 async def mrtklib_version() -> dict[str, str | list[str]]:
     """Get MRTKLIB version (from git tag) and available subcommands."""
-    import shutil
-
-    mrtk_path = shutil.which("mrtk") or "/usr/local/bin/mrtk"
-    mrtk_available = Path(mrtk_path).exists()
+    mrtk_available = MRTK_BIN.exists()
 
     # Known mrtk subcommands
     known_subcommands = ["post", "run", "relay", "convert", "ssr2obs", "ssr2osr", "bias", "dump", "cssr2rtcm3"]
@@ -108,7 +102,7 @@ async def mrtklib_version() -> dict[str, str | list[str]]:
 
     return {
         "version": __version__,
-        "binary": "mrtk" if mrtk_available else "",
+        "binary": str(MRTK_BIN) if mrtk_available else "",
         "subcommands": subcommands,
     }
 

@@ -4,6 +4,8 @@ import asyncio
 import uuid
 from typing import Any
 
+from mrtklib_web_ui.paths import MRTK_BIN
+
 
 class MRTKProcessManager:
     """Manages MRTKLIB subprocess execution."""
@@ -38,7 +40,7 @@ class MRTKProcessManager:
         process_id = str(uuid.uuid4())
 
         process = await asyncio.create_subprocess_exec(
-            "/usr/local/bin/mrtk",
+            str(MRTK_BIN),
             subcommand,
             *args,
             stdout=asyncio.subprocess.PIPE,

@@ -1,13 +1,14 @@
 # MRTKLIB Web UI
 
 A modern web-based user interface for [MRTKLIB](https://github.com/h-shiono/MRTKLIB),
-running entirely in a Docker container. MRTKLIB is a modernized C11
+supported through Docker and Nix workflows. MRTKLIB is a modernized C11
 implementation of RTKLIB with MADOCA-PPP, CLAS PPP-RTK, and advanced
-GNSS positioning capabilities. No compilation required — just
-`docker compose up` and start processing GNSS data from your browser.
+GNSS positioning capabilities. The Docker path remains available, and
+the repository now also exposes a flake-based `nix develop` / `nix run`
+workflow for Linux.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)
 ![React](https://img.shields.io/badge/react-19-blue.svg)
 ![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.7.6-green.svg)
 
@@ -15,6 +16,15 @@ GNSS positioning capabilities. No compilation required — just
 > Known limitations are listed in [Known Issues](#known-issues).
 
 ![MRTKLIB Web UI Dashboard](https://raw.githubusercontent.com/h-shiono/mrtklib-docker-ui/main/docs/screenshot.png)
+
+## Workflow Status
+
+- Supported runtime workflows:
+  `docker compose` and `nix run .`
+- Local editable development:
+  backend with `uv`, frontend with `npm`, optionally from `nix develop`
+- Nix validation status:
+  verified in the current worktree on `x86_64-linux`; remaining scope notes are tracked in [`docs/nix-plan.md`](./docs/nix-plan.md)
 
 ## Features
 
@@ -49,8 +59,8 @@ GNSS positioning capabilities. No compilation required — just
 - Per-stream Start / Stop control with live console output
 
 ### CLAS Pipeline (`mrtk relay` + `mrtk cssr2rtcm3`)
-- One-form Wizard for the SBC + receiver + CLAS workflow added in
-  MRTKLIB v0.6.5
+- One-form Wizard for the SBC + receiver + CLAS workflow using
+  MRTKLIB v0.7.6
 - Pipes Septentrio SBF (with QZSS L6 CLAS) → cssr2rtcm3 → RTCM3 →
   back to the receiver, which runs VRS-RTK on its own engine
 - Live throughput meter, position scatter (parsed from SBF
@@ -91,7 +101,9 @@ GNSS positioning capabilities. No compilation required — just
 
 ## Getting Started
 
-### Prerequisites
+Choose either the Docker workflow or the Nix workflow.
+
+### Docker Prerequisites
 
 - Docker (the **Build from source** flow additionally uses
   `docker compose`, which ships with Docker Desktop)
@@ -165,6 +177,49 @@ against a local MRTKLIB checkout, or develop the Web UI itself.
 
 4. **Open the UI** at <http://localhost:8080>
 
+### Nix Prerequisites
+
+- Nix with flakes enabled
+- GNSS data files (RINEX observation and navigation files)
+
+### Nix Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/h-shiono/mrtklib-docker-ui.git
+   cd mrtklib-docker-ui
+   ```
+
+2. **Start the packaged app**
+   ```bash
+   nix run .
+   ```
+
+3. **Open the UI**
+   ```
+   http://127.0.0.1:8000
+   ```
+
+4. **Optional: enter the dev shell**
+   ```bash
+   nix develop
+   ```
+
+### Using a local MRTKLIB checkout with Nix
+
+By default, the Nix workflow builds MRTKLIB from the upstream
+`github:h-shiono/MRTKLIB/v0.7.6` input declared in `flake.nix`. To build
+against a local editable MRTKLIB checkout instead, override that input:
+
+```bash
+nix build .#mrtklib \
+  --override-input mrtklib-src path:/path/to/MRTKLIB
+nix run . \
+  --override-input mrtklib-src path:/path/to/MRTKLIB
+```
+
+The override is local to the command and does not modify `flake.lock`.
+
 ### Data Directory Configuration
 
 | Mount | Default | Purpose | Access |
@@ -229,7 +284,7 @@ QZSS L6D/L6E files require no authentication.
 ### Technology Stack
 
 #### Backend
-- **Language**: Python 3.11+
+- **Language**: Python 3.12+
 - **Framework**: FastAPI
 - **Process Management**: asyncio.subprocess
 - **Real-time Communication**: WebSocket
@@ -246,10 +301,22 @@ QZSS L6D/L6E files require no authentication.
 - **Container**: Multi-stage Docker build
 - **MRTKLIB Binary**: Built from source via CMake (`mrtk` unified binary)
 - **Volumes**: `/workspace` (read-write), `/data` (read-only)
+- **Nix**: flake-based dev shell and packaged runtime on Linux
 
 ---
 
 ## Development Setup
+
+### Nix Dev Shell
+
+```bash
+nix develop
+```
+
+The dev shell provides `python`, `uv`, `node`, `cmake`, `git`, and
+`mrtk`, and exports runtime paths such as `MRTKLIB_MRTK_BIN`,
+`MRTKLIB_WORKSPACE_DIR`, `MRTKLIB_DATA_DIR`, and
+`MRTKLIB_SYSTEM_DIR`.
 
 ### Backend
 ```bash
@@ -260,7 +327,7 @@ uv run uvicorn mrtklib_web_ui.main:app --reload --host 0.0.0.0 --port 8000
 ### Frontend
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev   # http://localhost:5173
 ```
 

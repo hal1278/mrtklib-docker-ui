@@ -10,9 +10,11 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from mrtklib_web_ui.paths import WORKSPACE_DIR
+
 router = APIRouter()
 
-AI_SETTINGS_PATH = Path("/workspace/.ai_settings.toml")
+AI_SETTINGS_PATH = WORKSPACE_DIR / ".ai_settings.toml"
 DOCS_URL = "https://h-shiono.github.io/MRTKLIB/reference/config-options/"
 REF_CACHE_PATH = Path("/tmp/mrtklib_ref_cache.txt")
 
@@ -147,6 +149,7 @@ def _save_settings(api_key: str, model: str) -> None:
     tomllib.loads(content)
 
     # Atomic write: write to temp file then rename
+    AI_SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = AI_SETTINGS_PATH.with_suffix(".tmp")
     fd = os.open(str(tmp_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     try:

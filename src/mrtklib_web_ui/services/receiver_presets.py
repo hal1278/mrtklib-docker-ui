@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from mrtklib_web_ui.paths import CLAS_PRESETS_DIR
+
 
 @dataclass(frozen=True)
 class ReceiverPreset:
@@ -55,7 +57,9 @@ _PRESETS: dict[str, ReceiverPreset] = {
         model="mosaic-G5",
         relay_input_format="sbf",
         default_input_baud=115200,
-        cssr2rtcm3_config_path="/opt/mrtklib/clas-presets/septentrio-mosaic-g5.toml",
+        cssr2rtcm3_config_path=str(
+            CLAS_PRESETS_DIR / "septentrio-mosaic-g5.toml"
+        ),
         notes=(
             "Configure the receiver to output SBF (incl. GAL L6) and accept "
             "RTCM3 (MSM4/MSM5/1005/1006) on the same serial port — the relay "

@@ -10,16 +10,18 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from mrtklib_web_ui.paths import BUNDLED_PRESETS_DIR, WORKSPACE_DIR
+
 router = APIRouter()
 
-WORKSPACE_ROOT = Path("/workspace")
+WORKSPACE_ROOT = WORKSPACE_DIR
 PRESETS_DIR = WORKSPACE_ROOT / "presets"
 
-# Read-only presets shipped in the image (docker/bundled-presets/ ->
-# /opt/mrtklib/presets/<mode>/*.toml). Merged into the list alongside user
+# Read-only presets shipped with the runtime. Docker installs them below
+# /opt/mrtklib; Nix points MRTKLIB_SYSTEM_DIR at the package store path.
+# Merged into the list alongside user
 # presets. Their ids carry a "@" prefix, which _slugify can never produce
 # (it strips everything outside [\w\s-]), so bundled and user ids never clash.
-BUNDLED_PRESETS_DIR = Path("/opt/mrtklib/presets")
 BUNDLED_PREFIX = "@"
 
 

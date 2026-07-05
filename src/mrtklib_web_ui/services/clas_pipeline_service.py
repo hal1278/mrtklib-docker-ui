@@ -27,12 +27,19 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Awaitable, Callable
 
+from mrtklib_web_ui.paths import (
+    CORRECTIONS_ALIAS,
+    CORRECTIONS_DIR,
+    WORKSPACE_DIR,
+    resolve_runtime_path,
+)
 from mrtklib_web_ui.services.process_manager import process_manager, ProcessState
 from mrtklib_web_ui.services.receiver_presets import get_preset
 from mrtklib_web_ui.services.sbf_pvt_sniffer import (
@@ -62,7 +69,7 @@ class PipelineState(str, Enum):
     ERROR = "error"
 
 
-_WORKSPACE_ROOT = Path("/workspace")
+_WORKSPACE_ROOT = WORKSPACE_DIR.resolve()
 
 
 @dataclass
@@ -81,14 +88,12 @@ class PipelineConfig:
 def _validate_sbf_record_path(raw: str) -> tuple[Path | None, str | None]:
     """Resolve a user-supplied record path against /workspace.
 
-    Returns (parent_dir_to_create, error_message). The relay process is
+    Returns (runtime_path, error_message). The relay process is
     what actually opens the file (so it can apply mrtk's own time-format
     expansion); we only ensure the parent directory exists and that the
     target lives under /workspace.
     """
-    p = Path(raw)
-    if not p.is_absolute():
-        p = _WORKSPACE_ROOT / p
+    p = resolve_runtime_path(raw)
     try:
         # Resolve symlinks in the parent — the leaf may not exist yet
         # (it's created by relay) and may contain mrtk's %Y / %h tokens.
@@ -98,10 +103,25 @@ def _validate_sbf_record_path(raw: str) -> tuple[Path | None, str | None]:
     if parent != _WORKSPACE_ROOT and _WORKSPACE_ROOT not in parent.parents:
         return None, (
             f"SBF record path must be under /workspace (got {raw}). "
-            "Anything written outside /workspace is lost when the "
-            "container restarts."
+            "Only the configured workspace is writable."
         )
-    return parent, None
+    return p, None
+
+
+def _materialize_cssr_config(source: Path) -> Path:
+    """Create a runtime config with logical correction paths translated."""
+    content = source.read_text().replace(
+        str(CORRECTIONS_ALIAS),
+        str(CORRECTIONS_DIR),
+    )
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".toml",
+        prefix="mrtk_clas_",
+        delete=False,
+    ) as config_file:
+        config_file.write(content)
+        return Path(config_file.name)
 
 
 @dataclass
@@ -195,6 +215,7 @@ class ClasPipelineService:
     _status: PipelineStatus = field(default_factory=PipelineStatus)
     _sniffer: SbfTcpSniffer | None = None
     _watch_task: asyncio.Task | None = None
+    _runtime_cssr_config: Path | None = None
     _on_pvt: Callable[[PvtFix], Awaitable[None]] | None = None
     _on_flow: Callable[[FlowStats], Awaitable[None]] | None = None
 
@@ -267,13 +288,14 @@ class ClasPipelineService:
         # first -out (the optional file record is appended after it).
         relay_args: list[str] = ["-in", relay_in, "-b", "1", "-out", relay_out_tcp]
         if config.sbf_record_path:
-            parent, err = _validate_sbf_record_path(config.sbf_record_path)
+            record_path, err = _validate_sbf_record_path(config.sbf_record_path)
             if err is not None:
                 self._status = PipelineStatus(
                     state=PipelineState.ERROR, error_message=err
                 )
                 return self._status
-            assert parent is not None
+            assert record_path is not None
+            parent = record_path.parent
             try:
                 parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
@@ -283,7 +305,7 @@ class ClasPipelineService:
                 )
                 return self._status
             # `mrtk relay` expands its own time-format tokens (%Y, %h, ...).
-            relay_args += ["-out", f"file://{config.sbf_record_path}"]
+            relay_args += ["-out", f"file://{record_path}"]
 
         try:
             await process_manager.start(
@@ -307,8 +329,20 @@ class ClasPipelineService:
         # Pass the per-receiver TOML config (signal_remap + CLAS grid/BLQ
         # paths). Without it the OSR generator can't bootstrap a grid
         # network and every epoch logs "Skipped: noosr=N".
-        if Path(preset.cssr2rtcm3_config_path).is_file():
-            cssr_args += ["-k", preset.cssr2rtcm3_config_path]
+        preset_config = Path(preset.cssr2rtcm3_config_path)
+        if preset_config.is_file():
+            try:
+                self._runtime_cssr_config = _materialize_cssr_config(
+                    preset_config
+                )
+            except OSError as e:
+                self._status.state = PipelineState.ERROR
+                self._status.error_message = (
+                    f"Failed to prepare cssr2rtcm3 config: {e}"
+                )
+                await self._stop_process(RELAY_PID)
+                return self._status
+            cssr_args += ["-k", str(self._runtime_cssr_config)]
         cssr_args += ["-in", cssr_in, "-out", cssr_out]
         try:
             await process_manager.start(
@@ -320,6 +354,7 @@ class ClasPipelineService:
             self._status.state = PipelineState.ERROR
             self._status.error_message = f"Failed to start cssr2rtcm3: {e}"
             await self._stop_process(RELAY_PID)
+            self._cleanup_runtime_config()
             return self._status
 
         if self._on_pvt is not None and self._on_flow is not None:
@@ -356,6 +391,7 @@ class ClasPipelineService:
         # to give it a clean EOF rather than tearing the relay out from under it.
         await self._stop_process(CSSR_PID)
         await self._stop_process(RELAY_PID)
+        self._cleanup_runtime_config()
 
         self._status.state = PipelineState.STOPPED
         return self._status
@@ -380,6 +416,7 @@ class ClasPipelineService:
                         await self._stop_process(RELAY_PID)
                     if cssr_alive:
                         await self._stop_process(CSSR_PID)
+                    self._cleanup_runtime_config()
                     return
         except asyncio.CancelledError:
             return
@@ -393,6 +430,15 @@ class ClasPipelineService:
             return
         except Exception:
             pass
+
+    def _cleanup_runtime_config(self) -> None:
+        if self._runtime_cssr_config is None:
+            return
+        try:
+            self._runtime_cssr_config.unlink(missing_ok=True)
+        except OSError:
+            pass
+        self._runtime_cssr_config = None
 
 
 def _dev_basename(path: str) -> str:

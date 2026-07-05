@@ -9,6 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Awaitable
 
+from mrtklib_web_ui.paths import MRTK_BIN, resolve_stream_url
 from mrtklib_web_ui.services.mask_credentials import mask_log_line
 
 
@@ -109,11 +110,13 @@ class ProcessManager:
             if existing and existing.state == ProcessState.RUNNING:
                 raise ValueError(f"Process {proc_id} is already running")
 
+        runtime_args = [resolve_stream_url(arg) for arg in (args or [])]
+
         # Create process info
         info = ProcessInfo(
             id=proc_id,
             command=command,
-            args=args or [],
+            args=runtime_args,
             state=ProcessState.STARTING,
             started_at=datetime.now(),
         )
@@ -122,17 +125,17 @@ class ProcessManager:
         try:
             # Map to mrtk subcommand
             subcommand = self.SUBCOMMAND_MAP[command]
-            mrtk_path = "/usr/local/bin/mrtk"
+            mrtk_path = str(MRTK_BIN)
 
             # Log the command being executed
-            cmd_str = f"mrtk {subcommand} {' '.join(args or [])}"
+            cmd_str = f"mrtk {subcommand} {' '.join(runtime_args)}"
             await self._broadcast_log(proc_id, f"[SYSTEM] Starting: {cmd_str}")
 
             # Create subprocess
             process = await asyncio.create_subprocess_exec(
                 mrtk_path,
                 subcommand,
-                *(args or []),
+                *runtime_args,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 stdin=asyncio.subprocess.DEVNULL,

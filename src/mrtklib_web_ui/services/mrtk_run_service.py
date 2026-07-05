@@ -14,6 +14,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
+from mrtklib_web_ui.paths import MRTK_BIN, resolve_config_path
 from mrtklib_web_ui.services.mask_credentials import mask_log_line
 
 logger = logging.getLogger(__name__)
@@ -224,8 +225,8 @@ class MrtkRunStartRequest(BaseModel):
 class MrtkRunService:
     """Manages mrtk run (rtkrcv) process lifecycle."""
 
-    def __init__(self, mrtk_bin_path: str = "/usr/local/bin/mrtk"):
-        self.mrtk_bin_path = mrtk_bin_path
+    def __init__(self, mrtk_bin_path: str | None = None):
+        self.mrtk_bin_path = mrtk_bin_path or str(MRTK_BIN)
         self._process: Optional[asyncio.subprocess.Process] = None
         self._telnet_reader: Optional[asyncio.StreamReader] = None
         self._telnet_writer: Optional[asyncio.StreamWriter] = None
@@ -255,16 +256,22 @@ class MrtkRunService:
             return f'"{v}"'
 
         def _stream_section(section: str, s: StreamConfigModel):
+            stream_path = (
+                resolve_config_path(s.path) if s.type == "file" else s.path
+            )
             lines.append(f"[{section}]")
             lines.append(f"type   = {_s(s.type)}")
-            lines.append(f"path   = {_s(s.path)}")
+            lines.append(f"path   = {_s(stream_path)}")
             lines.append(f"format = {_s(s.format)}")
 
         def _log_stream_section(section: str, s: StreamConfigModel):
             # mrtk log streams (logstrN) accept only type/path — no format key.
+            stream_path = (
+                resolve_config_path(s.path) if s.type == "file" else s.path
+            )
             lines.append(f"[{section}]")
             lines.append(f"type   = {_s(s.type)}")
-            lines.append(f"path   = {_s(s.path)}")
+            lines.append(f"path   = {_s(stream_path)}")
 
         def _base_stream_section(section: str, s: BaseStreamConfigModel):
             _stream_section(section, s)

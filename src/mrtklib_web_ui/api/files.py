@@ -1,4 +1,4 @@
-"""File browser API for /workspace and /data directories."""
+"""File browser API for logical /workspace and /data roots."""
 
 from pathlib import Path
 from typing import Any, Literal
@@ -8,23 +8,29 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from mrtklib_web_ui.paths import (
-    ALLOWED_ROOTS,
-    WORKSPACE_ROOT,
-    DATA_ROOT,
-    CORRECTIONS_ROOT,
-    resolve_path as _resolve_path,
+    CORRECTIONS_ALIAS,
+    DATA_ALIAS,
+    ROOTS,
+    WORKSPACE_ALIAS,
+    find_root_for_path,
     is_allowed_path as _is_allowed_path,
+    path_within_root,
+    resolve_path as _resolve_path,
+    runtime_path_to_alias,
 )
 
 router = APIRouter()
 
+WORKSPACE_ROOT = next(root for root in ROOTS if root.alias == WORKSPACE_ALIAS)
+DATA_ROOT = next(root for root in ROOTS if root.alias == DATA_ALIAS)
+CORRECTIONS_ROOT = next(root for root in ROOTS if root.alias == CORRECTIONS_ALIAS)
 
-def _find_root(p: Path) -> Path:
+
+def _find_root(p: Path):
     """Find which allowed root a path belongs to."""
-    resolved = p.resolve()
-    for root in ALLOWED_ROOTS:
-        if resolved == root or root in resolved.parents:
-            return root
+    root = find_root_for_path(p)
+    if root:
+        return root
     raise HTTPException(status_code=403, detail="Access denied")
 
 
@@ -56,34 +62,23 @@ class RootInfo(BaseModel):
 @router.get("/roots")
 async def list_roots() -> list[RootInfo]:
     """List available volume roots."""
-    roots = [
-        RootInfo(
-            path="/workspace",
-            label="Workspace (output)",
-            writable=True,
-            mounted=WORKSPACE_ROOT.exists(),
-        ),
-        RootInfo(
-            path="/data",
-            label="Data (read-only)",
-            writable=False,
-            mounted=DATA_ROOT.exists() and any(DATA_ROOT.iterdir()) if DATA_ROOT.exists() else False,
-        ),
-    ]
-    # Only show System root if correction files are present
-    try:
-        if CORRECTIONS_ROOT.exists() and any(CORRECTIONS_ROOT.iterdir()):
-            roots.append(
-                RootInfo(
-                    path="/opt/mrtklib/corrections",
-                    label="System (read-only)",
-                    writable=False,
-                    mounted=True,
-                )
+    root_infos: list[RootInfo] = []
+    for root in ROOTS:
+        try:
+            mounted = root.actual.exists()
+            if mounted and not root.writable:
+                mounted = root.actual.is_dir() and any(root.actual.iterdir())
+        except OSError:
+            mounted = False
+        root_infos.append(
+            RootInfo(
+                path=str(root.alias),
+                label=root.label,
+                writable=root.writable,
+                mounted=mounted,
             )
-    except OSError:
-        pass  # Treat as not mounted
-    return roots
+        )
+    return root_infos
 
 
 @router.get("/corrections")
@@ -91,7 +86,7 @@ async def list_corrections() -> dict[str, list[dict[str, Any]]]:
     """List bundled MRTKLIB correction files."""
     result: dict[str, list[dict[str, Any]]] = {}
     for profile in ["clas", "madoca"]:
-        profile_path = CORRECTIONS_ROOT / profile
+        profile_path = CORRECTIONS_ROOT.actual / profile
         files: list[dict[str, Any]] = []
         try:
             if profile_path.exists():
@@ -101,7 +96,7 @@ async def list_corrections() -> dict[str, list[dict[str, Any]]]:
                             continue
                         files.append({
                             "filename": f.name,
-                            "path": str(f),
+                            "path": runtime_path_to_alias(f),
                             "size_bytes": f.stat().st_size,
                         })
                     except OSError:
@@ -113,7 +108,7 @@ async def list_corrections() -> dict[str, list[dict[str, Any]]]:
 
 
 @router.get("/browse", response_model=DirectoryListing)
-async def browse_directory(path: str = "/workspace") -> DirectoryListing:
+async def browse_directory(path: str = str(WORKSPACE_ALIAS)) -> DirectoryListing:
     """Browse files and directories in workspace or data."""
     target_path = _resolve_path(path)
 
@@ -124,7 +119,7 @@ async def browse_directory(path: str = "/workspace") -> DirectoryListing:
         # Graceful degradation for unmounted /data
         root = _find_root(target_path)
         if root == DATA_ROOT:
-            return DirectoryListing(path="/data", items=[])
+            return DirectoryListing(path=str(DATA_ALIAS), items=[])
         raise HTTPException(status_code=404, detail="Path not found")
 
     if not target_path.is_dir():
@@ -135,11 +130,11 @@ async def browse_directory(path: str = "/workspace") -> DirectoryListing:
     try:
         for item in sorted(target_path.iterdir(), key=lambda x: (x.is_file(), x.name)):
             item_type: Literal["file", "directory"] = "directory" if item.is_dir() else "file"
-            relative_path = str(item.relative_to(root))
+            relative_path = str(item.relative_to(root.actual))
             items.append(
                 FileInfo(
                     name=item.name,
-                    path=f"{root}/{relative_path}",
+                    path=str(root.alias / relative_path),
                     type=item_type,
                     size=item.stat().st_size if item.is_file() else None,
                 )
@@ -148,7 +143,7 @@ async def browse_directory(path: str = "/workspace") -> DirectoryListing:
         raise HTTPException(status_code=403, detail="Permission denied")
 
     return DirectoryListing(
-        path=str(target_path),
+        path=runtime_path_to_alias(target_path),
         items=items,
     )
 
@@ -205,7 +200,7 @@ async def read_file(path: str, max_lines: int = 5000) -> FileReadResponse:
     selected = lines[:max_lines]
 
     return FileReadResponse(
-        path=str(target_path),
+        path=runtime_path_to_alias(target_path),
         content="\n".join(selected),
         total_lines=total_lines,
         returned_lines=len(selected),
@@ -220,11 +215,13 @@ async def write_file(path: str, body: dict[str, Any]) -> dict[str, str]:
     target_path = _resolve_path(path)
 
     # Only allow writes to workspace
-    resolved = target_path.resolve()
-    if not (resolved == WORKSPACE_ROOT or WORKSPACE_ROOT in resolved.parents):
-        raise HTTPException(status_code=403, detail="Write access denied — only /workspace is writable")
+    if not path_within_root(target_path, WORKSPACE_ROOT.actual):
+        raise HTTPException(
+            status_code=403,
+            detail="Write access denied - only /workspace is writable",
+        )
 
     content = body.get("content", "")
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(content)
-    return {"status": "ok", "path": str(target_path)}
+    return {"status": "ok", "path": runtime_path_to_alias(target_path)}

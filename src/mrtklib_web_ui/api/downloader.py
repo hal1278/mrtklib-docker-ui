@@ -11,6 +11,12 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from mrtklib_web_ui.paths import (
+    WORKSPACE_ALIAS,
+    WORKSPACE_DIR,
+    resolve_runtime_path,
+    runtime_path_to_alias,
+)
 from mrtklib_web_ui.services.credentials import (
     get_credential,
     get_credential_source,
@@ -21,7 +27,7 @@ from mrtklib_web_ui.services.credentials import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-WORKSPACE_ROOT = Path("/workspace")
+WORKSPACE_ROOT = WORKSPACE_DIR
 DOWNLOADS_DIR = WORKSPACE_ROOT / "downloads"
 
 # In-memory download history (last 50)
@@ -41,7 +47,7 @@ async def _download_file(url: str, dest: Path, auth: tuple[str, str] | None = No
         "id": str(uuid.uuid4()),
         "filename": dest.name,
         "url": url,
-        "dest": str(dest),
+        "dest": runtime_path_to_alias(dest),
         "status": "downloading",
         "size_bytes": 0,
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
@@ -136,7 +142,7 @@ async def download_qzss_clas(body: QzssClasRequest) -> list[dict[str, Any]]:
     for ses in sessions:
         filename = f"{body.year:04d}{body.doy:03d}{ses}.l6"
         url = f"https://sys.qzss.go.jp/archives/l6/{body.year:04d}/{filename}"
-        dest = Path(body.dest_dir) / filename
+        dest = resolve_runtime_path(body.dest_dir, default_root=WORKSPACE_ALIAS) / filename
         result = await _download_file(url, dest)
         results.append(result)
     return results
@@ -160,7 +166,7 @@ async def download_qzss_madoca(body: QzssMadocaRequest) -> list[dict[str, Any]]:
         for prn in prns:
             filename = f"{body.year:04d}{body.doy:03d}{ses}.{prn}.l6"
             url = f"https://l6msg.go.gnss.go.jp/archives/{body.year:04d}/{body.doy:03d}/{filename}"
-            dest = Path(body.dest_dir) / filename
+            dest = resolve_runtime_path(body.dest_dir, default_root=WORKSPACE_ALIAS) / filename
             result = await _download_file(url, dest)
             results.append(result)
     return results
@@ -212,7 +218,7 @@ async def download_igs_products(body: IgsProductRequest) -> dict[str, Any]:
     else:
         raise HTTPException(400, f"Unknown product type: {body.product_type}")
 
-    dest = Path(body.dest_dir) / filename
+    dest = resolve_runtime_path(body.dest_dir, default_root=WORKSPACE_ALIAS) / filename
     return await _download_file(url, dest, auth=cred)
 
 
@@ -232,11 +238,12 @@ async def download_gsi_cors(body: GsiCorsRequest) -> dict[str, Any]:
     if not cred:
         raise HTTPException(401, "GSI FTP credentials required")
 
+    dest_dir = resolve_runtime_path(body.dest_dir, default_root=WORKSPACE_ALIAS)
     entry = {
         "id": str(uuid.uuid4()),
         "filename": f"{body.station}_{body.year:04d}{body.doy:03d}.obs",
         "url": f"ftp://terras.gsi.go.jp/data/GPS_1sec/{body.year}/{body.doy:03d}/{body.station}/",
-        "dest": str(Path(body.dest_dir) / f"{body.station}_{body.year:04d}{body.doy:03d}.obs"),
+        "dest": runtime_path_to_alias(dest_dir / f"{body.station}_{body.year:04d}{body.doy:03d}.obs"),
         "status": "downloading",
         "size_bytes": 0,
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
@@ -246,7 +253,7 @@ async def download_gsi_cors(body: GsiCorsRequest) -> dict[str, Any]:
 
     try:
         import ftplib
-        dest = Path(body.dest_dir)
+        dest = dest_dir
         dest.mkdir(parents=True, exist_ok=True)
 
         ftp = ftplib.FTP("terras.gsi.go.jp")

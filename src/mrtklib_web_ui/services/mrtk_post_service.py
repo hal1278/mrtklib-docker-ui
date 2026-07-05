@@ -13,6 +13,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, BeforeValidator, Field
 
+from mrtklib_web_ui.paths import MRTK_BIN, resolve_config_path
 from mrtklib_web_ui.services.mask_credentials import mask_log_line
 from mrtklib_web_ui.services.input_staging import remove_stage_dir, stage_paths
 
@@ -411,8 +412,8 @@ class MrtkPostJob(BaseModel):
 class MrtkPostService:
     """Service for running mrtk post post-processing."""
 
-    def __init__(self, mrtk_bin_path: str = "/usr/local/bin/mrtk"):
-        self.mrtk_bin_path = mrtk_bin_path
+    def __init__(self, mrtk_bin_path: str | None = None):
+        self.mrtk_bin_path = mrtk_bin_path or str(MRTK_BIN)
 
     def generate_conf_file(self, config: MrtkPostConfig) -> str:
         """Generate MRTKLIB TOML configuration file content."""
@@ -461,6 +462,9 @@ class MrtkPostService:
 
         def _s(v: str) -> str:
             return f'"{v}"'
+
+        def _path(v: str) -> str:
+            return _s(resolve_config_path(v))
 
         def _b(v: bool) -> str:
             return "true" if v else "false"
@@ -839,24 +843,24 @@ class MrtkPostService:
         # ── [files] ──────────────────────────────────────────────────────
         fl = config.files
         lines.append("[files]")
-        lines.append(f"satellite_atx      = {_s(fl.satellite_atx)}")
-        lines.append(f"receiver_atx       = {_s(fl.receiver_atx)}")
-        lines.append(f"station_pos        = {_s(fl.station_pos)}")
-        lines.append(f"geoid              = {_s(fl.geoid)}")
-        lines.append(f"ionosphere         = {_s(fl.ionosphere)}")
-        lines.append(f"dcb                = {_s(fl.dcb)}")
-        lines.append(f"eop                = {_s(fl.eop)}")
-        lines.append(f"ocean_loading      = {_s(fl.ocean_loading)}")
-        if fl.temp_dir: lines.append(f"temp_dir           = {_s(fl.temp_dir)}")
-        if fl.trace: lines.append(f"trace              = {_s(fl.trace)}")
-        if fl.fcb: lines.append(f"fcb                = {_s(fl.fcb)}")
-        if fl.bias_sinex: lines.append(f"bias_sinex         = {_s(fl.bias_sinex)}")
-        if fl.cssr_grid: lines.append(f"cssr_grid          = {_s(fl.cssr_grid)}")
-        if fl.isb_table: lines.append(f"isb_table          = {_s(fl.isb_table)}")
-        if fl.phase_cycle: lines.append(f"phase_cycle        = {_s(fl.phase_cycle)}")
-        if fl.cmd_file_1: lines.append(f"cmd_file_1         = {_s(fl.cmd_file_1)}")
-        if fl.cmd_file_2: lines.append(f"cmd_file_2         = {_s(fl.cmd_file_2)}")
-        if fl.cmd_file_3: lines.append(f"cmd_file_3         = {_s(fl.cmd_file_3)}")
+        lines.append(f"satellite_atx      = {_path(fl.satellite_atx)}")
+        lines.append(f"receiver_atx       = {_path(fl.receiver_atx)}")
+        lines.append(f"station_pos        = {_path(fl.station_pos)}")
+        lines.append(f"geoid              = {_path(fl.geoid)}")
+        lines.append(f"ionosphere         = {_path(fl.ionosphere)}")
+        lines.append(f"dcb                = {_path(fl.dcb)}")
+        lines.append(f"eop                = {_path(fl.eop)}")
+        lines.append(f"ocean_loading      = {_path(fl.ocean_loading)}")
+        if fl.temp_dir: lines.append(f"temp_dir           = {_path(fl.temp_dir)}")
+        if fl.trace: lines.append(f"trace              = {_path(fl.trace)}")
+        if fl.fcb: lines.append(f"fcb                = {_path(fl.fcb)}")
+        if fl.bias_sinex: lines.append(f"bias_sinex         = {_path(fl.bias_sinex)}")
+        if fl.cssr_grid: lines.append(f"cssr_grid          = {_path(fl.cssr_grid)}")
+        if fl.isb_table: lines.append(f"isb_table          = {_path(fl.isb_table)}")
+        if fl.phase_cycle: lines.append(f"phase_cycle        = {_path(fl.phase_cycle)}")
+        if fl.cmd_file_1: lines.append(f"cmd_file_1         = {_path(fl.cmd_file_1)}")
+        if fl.cmd_file_2: lines.append(f"cmd_file_2         = {_path(fl.cmd_file_2)}")
+        if fl.cmd_file_3: lines.append(f"cmd_file_3         = {_path(fl.cmd_file_3)}")
         lines.append("")
 
         # ── [server] (rtkrcv runtime only; v0.7.6 trimmed) ───────────────

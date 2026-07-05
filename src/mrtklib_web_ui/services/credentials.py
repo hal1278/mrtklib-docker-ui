@@ -1,9 +1,10 @@
 """Credential management for data download services."""
 
 import os
-from pathlib import Path
 
-CRED_FILE = Path("/workspace/.credentials.toml")
+from mrtklib_web_ui.paths import CREDENTIALS_FILE, NETRC_PATH
+
+CRED_FILE = CREDENTIALS_FILE
 
 NETRC_HOSTS = {
     "earthdata": "urs.earthdata.nasa.gov",
@@ -68,7 +69,7 @@ def get_credential_source(service: str) -> str | None:
 
 
 def save_credential(service: str, username: str, password: str) -> None:
-    """Save credentials to /workspace/.credentials.toml."""
+    """Save credentials to the configured credentials file."""
     existing: dict = {}
     if CRED_FILE.exists():
         import tomllib
@@ -85,6 +86,7 @@ def save_credential(service: str, username: str, password: str) -> None:
         lines.append(f'username = "{v["username"]}"')
         lines.append(f'password = "{v["password"]}"')
         lines.append('')
+    CRED_FILE.parent.mkdir(parents=True, exist_ok=True)
     CRED_FILE.write_text("\n".join(lines))
     CRED_FILE.chmod(0o600)
 
@@ -111,7 +113,7 @@ def delete_credential(service: str) -> None:
 
 
 def setup_netrc_from_env() -> None:
-    """Generate /root/.netrc entries from environment variables."""
+    """Generate a configured .netrc file from environment variables."""
     entries = []
     for service, (env_u, env_p) in ENV_MAP.items():
         u = os.getenv(env_u)
@@ -121,8 +123,9 @@ def setup_netrc_from_env() -> None:
             entries.append(f"machine {host} login {u} password {p}")
 
     if entries:
-        netrc_path = Path("/root/.netrc")
+        netrc_path = NETRC_PATH
         if not netrc_path.exists() or netrc_path.stat().st_size == 0:
+            netrc_path.parent.mkdir(parents=True, exist_ok=True)
             netrc_path.write_text("\n".join(entries) + "\n")
             netrc_path.chmod(0o600)
 
@@ -131,7 +134,7 @@ def _read_netrc(service: str) -> tuple[str, str] | None:
     host = NETRC_HOSTS.get(service)
     if not host:
         return None
-    netrc_path = Path("/root/.netrc")
+    netrc_path = NETRC_PATH
     if not netrc_path.exists():
         return None
     try:
