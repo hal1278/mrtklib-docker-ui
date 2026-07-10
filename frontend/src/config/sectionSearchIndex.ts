@@ -91,8 +91,9 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'positioning.clas.grid_selection_radius', 'positioning.clas.receiver_type',
     'positioning.clas.position_uncertainty_x', 'positioning.clas.position_uncertainty_y',
     'positioning.clas.position_uncertainty_z',
-    // ISB + Phase Shift (relocated here — PPP-RTK / VRS only)
-    'isb', 'inter-system bias', 'phase shift', 'receiver.isb', 'receiver.phase_shift',
+    // Iono Comp. + ISB + Phase Shift (relocated here — PPP-RTK / VRS only)
+    'iono compensation', 'iono comp', 'isb', 'inter-system bias', 'phase shift',
+    'receiver.iono_correction', 'receiver.isb', 'receiver.phase_shift',
     // Adaptive Filter (merged here — PPP-RTK / VRS only)
     'adaptive filter', 'iono forgetting factor', 'iono gain', 'pva forgetting factor',
     'pva gain', 'forgetting factor',
@@ -101,10 +102,10 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   receiver: [
-    'iono compensation', 'max age', 'baseline length',
+    'max age', 'baseline length',
     'baseline sigma', 'ignore chi error', 'bds-2 bias', 'ppp sat clock bias', 'ppp sat phase bias',
     'uncorrected bias', 'max bias dt', 'satellite mode', 'reference type', 'signal selection',
-    'receiver.iono_correction', 'receiver.max_age',
+    'receiver.max_age',
     'receiver.baseline_length', 'receiver.baseline_sigma', 'receiver.ignore_chi_error',
     'receiver.bds2_bias', 'receiver.ppp_sat_clock_bias', 'receiver.ppp_sat_phase_bias',
     'receiver.uncorr_bias', 'receiver.max_bias_dt', 'receiver.satellite_mode', 'receiver.reference_type',

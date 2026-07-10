@@ -1385,6 +1385,11 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     disabled={modeDisabled('ar.thresholds.alpha')} style={{flex:1}} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
+                  <Switch size="xs" checked={config.receiver.ionoCorrection}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>ISB</Text>
                   <Switch size="xs" checked={config.receiver.isb}
                     onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, isb: e.currentTarget.checked } })} />
@@ -2024,19 +2029,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             <Stack gap="xs">
               <SectionHeader title="Receiver Options" anchor="receiver" />
               <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
-                  <Switch
-                    size="xs"
-                    checked={config.receiver.ionoCorrection}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked },
-                      })
-                    }
-                  />
-                </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Age (s)</Text>
                   <NumberInput
