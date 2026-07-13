@@ -101,6 +101,7 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
 
   return {
     positioning: {
+      ...d.positioning,
       positioningMode: revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'],
       correction: get(pos, 'correction', d.positioning.correction),
       frequency: revMap(get(pos, 'frequency', d.positioning.frequency), FREQ_REV) as MrtkPostConfig['positioning']['frequency'],
@@ -143,6 +144,7 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
         troposphere: revMap(get(atm, 'troposphere', d.positioning.atmosphere.troposphere), TROPO_REV) as MrtkPostConfig['positioning']['atmosphere']['troposphere'],
       },
       clas: {
+        ...d.positioning.clas,
         gridSelectionRadius: get(clas, 'grid_selection_radius', d.positioning.clas.gridSelectionRadius),
         receiverType: get(clas, 'receiver_type', d.positioning.clas.receiverType),
         positionUncertaintyX: get(clas, 'position_uncertainty_x', d.positioning.clas.positionUncertaintyX),

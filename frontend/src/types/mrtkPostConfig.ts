@@ -79,6 +79,12 @@ export type PhaseShift = 'off' | 'table';
 
 export type GpsFrequency = 'l1' | 'l1+l2' | 'l1+l5' | 'l1+l2+l5' | 'l1+l5(l2)';
 
+// ── v0.7.6 additions ──────────────────────────────────────────────────────
+export type RobustMode = 'off' | 'igg3';                 // positioning.robust
+export type TdcpMode = 'off' | 'on';                     // positioning.tdcp
+export type SppSeed = 'off' | 'cn0+tdcp' | 'cn0+tdcp+robust'; // clas.enhanced_spp_seed
+export type ReferenceDop = 'zd' | 'sd';                  // ar.thresholds.reference_dop
+
 // ─── [positioning] ───────────────────────────────────────────────────────────
 
 export interface ConstellationSelection {
@@ -102,9 +108,15 @@ export type SignalMode = 'frequency' | 'signals';
 export interface ClasConfig {
   gridSelectionRadius: number;   // m
   receiverType: string;
-  positionUncertaintyX: number;  // m
-  positionUncertaintyY: number;  // m
-  positionUncertaintyZ: number;  // m
+  // v0.7.6: enhanced SPP seed for PPP-RTK/VRS reconvergence
+  enhancedSppSeed: SppSeed;
+  // v0.7.6: positioning.clas.resilience (max_obs_loss / float_count live in ServerConfig)
+  l6Merge: number;               // L6 message merge mode
+  resetInterval: number;         // periodic filter reset interval (epochs)
+  // NOTE: positionUncertainty{X,Y,Z} removed in v0.7.6; kept until UI cleanup (no longer serialized)
+  positionUncertaintyX: number;  // m (deprecated)
+  positionUncertaintyY: number;  // m (deprecated)
+  positionUncertaintyZ: number;  // m (deprecated)
 }
 
 export interface CorrectionsConfig {
@@ -121,6 +133,7 @@ export interface CorrectionsConfig {
   gpsFrequency: GpsFrequency;
   qzsFrequency: GpsFrequency;
   tidalCorrection: TidalCorrection;
+  snrFixed: number;              // v0.7.6: fixed output SNR (dB-Hz; 0 = off)
 }
 
 export interface AtmosphereConfig {
@@ -142,6 +155,13 @@ export interface PositioningConfig {
   constellations: ConstellationSelection;
   excludedSatellites: string;
 
+  // v0.7.6 additions (top-level [positioning])
+  robust: RobustMode;
+  robustK0: number;              // IGG-III k0 threshold (<=0: code default)
+  robustK1: number;              // IGG-III k1 threshold (<=0: code default)
+  tdcp: TdcpMode;                // SPP time-differenced carrier phase
+  tdcpJump: number;              // TDCP jump-rejection threshold (m)
+
   // [positioning.snr_mask]
   snrMask: SnrMaskConfig;
 
@@ -160,14 +180,18 @@ export interface PositioningConfig {
 export interface ARThresholds {
   ratio: number;
   ratio1: number;
-  ratio2: number;
-  ratio3: number;
-  ratio4: number;
+  ratio2: number;   // deprecated in v0.7.6 (kept until UI cleanup; not serialized)
+  ratio3: number;   // deprecated in v0.7.6
+  ratio4: number;   // deprecated in v0.7.6
   ratio5: number;
   ratio6: number;
   alpha: ARAlpha;
   elevationMask: number;
   holdElevation: number;
+  // v0.7.6 additions
+  maxPdopAr: number;      // max PDOP for AR (0: no limit)
+  maxPdopHold: number;    // max PDOP to hold ambiguity (0: no limit)
+  referenceDop: ReferenceDop;
 }
 
 export interface ARCounters {
@@ -198,6 +222,7 @@ export interface AmbiguityResolutionConfig {
   glonassAr: GloARMode;
   bdsAr: BdsARMode;
   qzsAr: QzsARMode;
+  systems: number;   // v0.7.6: [ambiguity_resolution] systems bitmask (PPP-AR)
 
   // [ambiguity_resolution.thresholds]
   thresholds: ARThresholds;
@@ -224,6 +249,9 @@ export interface RejectionConfig {
   gdop: number;
   pseudorangeDiff: number;
   positionErrorCount: number;
+  // v0.7.6 additions
+  sppResidual: number;    // standalone SPP residual reject threshold
+  sppMinSats: number;     // min sats for SPP
 }
 
 // ─── [slip_detection] ────────────────────────────────────────────────────────
@@ -244,6 +272,11 @@ export interface MeasurementErrorConfig {
   phaseBaseline: number;
   doppler: number;
   uraRatio: number;
+  // v0.7.6 additions
+  snrMax: number;         // SNR max (dB-Hz)
+  snrError: number;       // SNR-dependent error term
+  ionosphere: number;     // ionosphere estimation-error term (m)
+  troposphere: number;    // troposphere estimation-error term (m)
 }
 
 export interface InitialStdConfig {
@@ -319,6 +352,7 @@ export interface ReceiverConfig {
   maxAge: number;
   baselineLength: number;
   baselineSigma: number;
+  clockJump: boolean;     // v0.7.6: positioning.ppp.clock_jump
 }
 
 // ─── [antenna] ───────────────────────────────────────────────────────────────
@@ -375,12 +409,18 @@ export interface FilesConfig {
   dcb: string;
   eop: string;
   oceanLoading: string;
-  elevationMaskFile: string;
+  elevationMaskFile: string;  // deprecated in v0.7.6 (kept until UI cleanup; not serialized)
   fcb: string;
   biasSinex: string;
   cssrGrid: string;
   isbTable: string;
   phaseCycle: string;
+  // v0.7.6 additions
+  tempDir: string;
+  trace: string;              // trace output file (replaces output.debug_trace path)
+  cmdFile1: string;           // rtkrcv startup command files
+  cmdFile2: string;
+  cmdFile3: string;
 }
 
 // ─── [server] ────────────────────────────────────────────────────────────────
@@ -403,6 +443,8 @@ export interface ServerConfig {
   l6Margin: number;
   maxObsLoss: number;
   floatCount: number;
+  startCmd: string;   // v0.7.6: server.start_cmd
+  stopCmd: string;    // v0.7.6: server.stop_cmd
 }
 
 // ─── Time (UI-only, maps to CLI flags -ts/-te/-ti) ───────────────────────────
@@ -473,6 +515,7 @@ export const DEFAULT_CORRECTIONS: CorrectionsConfig = {
   gpsFrequency: 'l1+l2',
   qzsFrequency: 'l1+l2',
   tidalCorrection: 'off',
+  snrFixed: 0,
 };
 
 export const DEFAULT_ATMOSPHERE: AtmosphereConfig = {
@@ -495,6 +538,11 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
     sbas: true, beidou: true, irnss: false,
   },
   excludedSatellites: '',
+  robust: 'off',
+  robustK0: 0.0,
+  robustK1: 0.0,
+  tdcp: 'off',
+  tdcpJump: 0.0,
   snrMask: {
     enableRover: false,
     enableBase: false,
@@ -509,6 +557,9 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
   clas: {
     gridSelectionRadius: 1000,
     receiverType: '',
+    enhancedSppSeed: 'cn0+tdcp',
+    l6Merge: 0,
+    resetInterval: 0,
     positionUncertaintyX: 10.0,
     positionUncertaintyY: 10.0,
     positionUncertaintyZ: 10.0,
@@ -521,6 +572,7 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   glonassAr: 'on',
   bdsAr: 'on',
   qzsAr: 'on',
+  systems: 1,   // SYS_GPS (prcopt_default.arsys); provisional — verify for broader PPP-AR
   thresholds: {
     ratio: 3.0,
     ratio1: 0.9999,
@@ -532,6 +584,9 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
     alpha: '0.1%',
     elevationMask: 0,
     holdElevation: 0,
+    maxPdopAr: 0.0,
+    maxPdopHold: 0.0,
+    referenceDop: 'zd',
   },
   counters: {
     lockCount: 0,
@@ -563,6 +618,8 @@ export const DEFAULT_REJECTION: RejectionConfig = {
   gdop: 30.0,
   pseudorangeDiff: 0.0,
   positionErrorCount: 0,
+  sppResidual: 0.0,   // prcopt_default.rejethres
+  sppMinSats: 7,      // prcopt_default.rejeminsat
 };
 
 export const DEFAULT_SLIP_DETECTION: SlipDetectionConfig = {
@@ -582,6 +639,10 @@ export const DEFAULT_KALMAN_FILTER: KalmanFilterConfig = {
     phaseBaseline: 0.0,
     doppler: 1.0,
     uraRatio: 0.0,
+    snrMax: 0.0,        // provisional — verify against mrtk_opt.c
+    snrError: 0.0,      // provisional
+    ionosphere: 0.0,    // stats_erriono
+    troposphere: 0.0,   // stats_errtrop
   },
   initialStd: {
     bias: 30.0,
@@ -635,6 +696,7 @@ export const DEFAULT_RECEIVER: ReceiverConfig = {
   maxAge: 30.0,
   baselineLength: 0.0,
   baselineSigma: 0.0,
+  clockJump: false,
 };
 
 export const DEFAULT_ANTENNA: AntennaConfig = {
@@ -692,6 +754,11 @@ export const DEFAULT_FILES: FilesConfig = {
   cssrGrid: '',
   isbTable: '',
   phaseCycle: '',
+  tempDir: '',
+  trace: '',
+  cmdFile1: '',
+  cmdFile2: '',
+  cmdFile3: '',
 };
 
 export const DEFAULT_SERVER: ServerConfig = {
@@ -712,6 +779,8 @@ export const DEFAULT_SERVER: ServerConfig = {
   l6Margin: 0,
   maxObsLoss: 90.0,
   floatCount: 15,
+  startCmd: '',
+  stopCmd: '',
 };
 
 // Generate today's date as YYYY/MM/DD
