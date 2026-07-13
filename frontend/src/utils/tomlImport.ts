@@ -148,7 +148,8 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       robust: get(pos, 'robust', d.positioning.robust) as MrtkPostConfig['positioning']['robust'],
       robustK0: get(pos, 'robust_k0', d.positioning.robustK0),
       robustK1: get(pos, 'robust_k1', d.positioning.robustK1),
-      tdcp: get(pos, 'tdcp', d.positioning.tdcp) as MrtkPostConfig['positioning']['tdcp'],
+      // tdcp is a SWTOPT key: confs may write it as bool (true/false) or "on"/"off"
+      tdcp: boolToOnOff(pos, 'tdcp', d.positioning.tdcp) as MrtkPostConfig['positioning']['tdcp'],
       tdcpJump: get(pos, 'tdcp_jump', d.positioning.tdcpJump),
       snrMask: {
         enableRover: get(snr, 'rover_enabled', d.positioning.snrMask.enableRover),
