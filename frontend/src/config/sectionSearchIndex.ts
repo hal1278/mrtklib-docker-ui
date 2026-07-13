@@ -52,7 +52,8 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   ar: [
-    'ar mode', 'ambiguity resolution', 'glonass ar', 'beidou ar', 'bds ar', 'qzss ar',
+    'ar mode', 'ambiguity resolution', 'gps ar', 'glonass ar', 'beidou ar', 'bds ar', 'qzss ar',
+    'ambiguity_resolution.gps_ar',
     'ratio threshold', 'ar elevation mask', 'hold elevation mask', 'ratio 1', 'ratio 2',
     'ratio 3', 'ratio 4', 'ratio 5', 'ratio 6',
     'lock count', 'min fix epochs', 'max lambda iterations', 'outage reset count',

@@ -1538,24 +1538,29 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     style={{ flex: 1 }}
                   />
                 </Group>
-                {/* Per-system AR — GLO / BDS / QZS on one row */}
+                {/* Per-system AR — GPS / GLO / BDS / QZS on one row */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Per-system AR" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="AR GPS/GLO/BDS/QZS" style={OPT_LABEL_STYLE}
                     fields={[
+                      { name: 'GPS', metaKey: 'ar.gps_ar' },
                       { name: 'GLONASS', metaKey: 'ar.glonass_ar' },
                       { name: 'BeiDou', metaKey: 'ar.bds_ar' },
                       { name: 'QZSS', metaKey: 'ar.qzs_ar' },
                     ]} />
                   <Group wrap="nowrap" align="center" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <Select size="xs" title="Per-system AR GLONASS" value={config.ambiguityResolution.glonassAr}
+                    <Select size="xs" title="GPS AR" aria-label="GPS AR" value={config.ambiguityResolution.gpsAr ? 'on' : 'off'}
+                      onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, gpsAr: value === 'on' } })}
+                      data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
+                      disabled={modeDisabled('ar.gps_ar')} style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="GLONASS AR" aria-label="GLONASS AR" value={config.ambiguityResolution.glonassAr}
                       onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, glonassAr: value } })}
                       data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }, { value: 'autocal', label: 'AutoCal' }]}
                       disabled={modeDisabled('ar.glonass_ar')} style={{ flex: 1, minWidth: 0 }} />
-                    <Select size="xs" title="Per-system AR BeiDou" value={config.ambiguityResolution.bdsAr}
+                    <Select size="xs" title="BeiDou AR" aria-label="BeiDou AR" value={config.ambiguityResolution.bdsAr}
                       onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, bdsAr: value } })}
                       data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
                       disabled={modeDisabled('ar.bds_ar')} style={{ flex: 1, minWidth: 0 }} />
-                    <Select size="xs" title="Per-system AR QZSS" value={config.ambiguityResolution.qzsAr}
+                    <Select size="xs" title="QZSS AR" aria-label="QZSS AR" value={config.ambiguityResolution.qzsAr}
                       onChange={(value: any) => handleConfigChange({ ...config, ambiguityResolution: { ...config.ambiguityResolution, qzsAr: value } })}
                       data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
                       disabled={modeDisabled('ar.qzs_ar')} style={{ flex: 1, minWidth: 0 }} />

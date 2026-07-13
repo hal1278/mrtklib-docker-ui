@@ -115,6 +115,12 @@ const OPTION_META_DEF = {
     docsAnchor: '#ambiguity-resolution',
     modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK, MODE_SETS.VRS),
   },
+  'ar.gps_ar': {
+    label: 'GPS AR',
+    description: 'Resolve GPS carrier-phase ambiguities (the primary AR system).',
+    docsAnchor: '#ambiguity-resolution',
+    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK, MODE_SETS.VRS),
+  },
   'ar.glonass_ar': {
     label: 'GLONASS AR',
     description: 'GLONASS ambiguity resolution. Requires GLONASS inter-channel bias calibration.',
