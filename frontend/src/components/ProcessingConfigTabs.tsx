@@ -3095,7 +3095,9 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
  * TOML Configuration Preview as a right-side Drawer.
  */
 export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkPostConfig; opened: boolean; onClose: () => void; streams?: Record<string, { type: string; path: string; format: string }> }) {
-  const isPppRtk = config.positioning.positioningMode === 'ppp-rtk';
+  const isClasPreview =
+    config.positioning.positioningMode === 'ppp-rtk' ||
+    config.positioning.positioningMode === 'vrs-rtk';
 
   const tomlPreview = useMemo(() => {
     const _s = (v: string) => `"${v}"`;
@@ -3155,6 +3157,8 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     if (p.constellations.beidou) systems.push('"BeiDou"');
     if (p.constellations.irnss) systems.push('"NavIC"');
     L.push(`systems             = [${systems.join(', ')}]`);
+    if (p.robust !== 'off') L.push(`robust              = ${_s(p.robust)}`);
+    if (p.tdcp !== 'off') L.push(`tdcp                = ${_s(p.tdcp)}`);
     L.push('');
     L.push('[positioning.corrections]');
     L.push(`satellite_antenna  = ${_b(cor.satelliteAntenna)}`);
@@ -3166,13 +3170,16 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     L.push(`ionosphere  = ${_s(IONO[atm.ionosphere] ?? atm.ionosphere)}`);
     L.push(`troposphere = ${_s(TROPO[atm.troposphere] ?? atm.troposphere)}`);
     L.push('');
-    if (isPppRtk) {
+    if (isClasPreview) {
       L.push('[positioning.clas]');
-      L.push(`grid_selection_radius  = ${p.clas.gridSelectionRadius}`);
-      L.push(`receiver_type          = ${_s(p.clas.receiverType)}`);
-      L.push(`position_uncertainty_x = ${p.clas.positionUncertaintyX}`);
-      L.push(`position_uncertainty_y = ${p.clas.positionUncertaintyY}`);
-      L.push(`position_uncertainty_z = ${p.clas.positionUncertaintyZ}`);
+      L.push(`grid_selection_radius = ${p.clas.gridSelectionRadius}`);
+      L.push(`receiver_type         = ${_s(p.clas.receiverType)}`);
+      L.push(`enhanced_spp_seed     = ${_s(p.clas.enhancedSppSeed)}`);
+      L.push('');
+      L.push('[positioning.clas.ambiguities]');
+      L.push(`phase_shift    = ${_s(rx.phaseShift)}`);
+      L.push(`isb            = ${_b(rx.isb)}`);
+      if (rx.referenceType) L.push(`reference_type = ${_s(rx.referenceType)}`);
       L.push('');
     }
     L.push('[ambiguity_resolution]');
@@ -3201,7 +3208,6 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     L.push('');
     L.push('[kalman_filter]');
     L.push(`iterations    = ${kf.iterations}`);
-    L.push(`sync_solution = ${_b(kf.syncSolution)}`);
     L.push('');
     L.push('[kalman_filter.measurement_error]');
     L.push(`code_phase_ratio_L1 = ${kf.measurementError.codePhaseRatioL1}`);
@@ -3224,9 +3230,11 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     L.push(`bds2    = ${_s(sig.bds2)}`);
     L.push(`bds3    = ${_s(sig.bds3)}`);
     L.push('');
-    L.push('[receiver]');
+    L.push('[positioning.relative]');
+    L.push(`max_age = ${rx.maxAge}`);
+    L.push('');
+    L.push('[positioning.madoca]');
     L.push(`iono_correction = ${_b(rx.ionoCorrection)}`);
-    if (rx.maxAge !== 30) L.push(`max_age         = ${rx.maxAge}`);
     L.push('');
     L.push('[antenna.rover]');
     L.push(`position_type = ${_s(ant.rover.mode)}`);
@@ -3259,13 +3267,8 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     L.push(`nav_msg_select     = ${_s(srv.navMsgSelect ?? 'all')}`);
     if (srv.proxy) L.push(`proxy              = ${_s(srv.proxy)}`);
     L.push(`swap_margin        = ${srv.swapMargin ?? 30}`);
-    L.push(`time_interpolation = ${_b(srv.timeInterpolation ?? false)}`);
-    L.push(`sbas_satellite     = ${_s(srv.sbasSatellite ?? '0')}`);
-    if (srv.rinexOption1) L.push(`rinex_option_1     = ${_s(srv.rinexOption1)}`);
-    if (srv.rinexOption2) L.push(`rinex_option_2     = ${_s(srv.rinexOption2)}`);
-    if (srv.pppOption) L.push(`ppp_option         = ${_s(srv.pppOption)}`);
-    if (srv.rtcmOption) L.push(`rtcm_option        = ${_s(srv.rtcmOption)}`);
-    if (srv.l6Margin) L.push(`l6_margin          = ${srv.l6Margin}`);
+    if (srv.startCmd) L.push(`start_cmd          = ${_s(srv.startCmd)}`);
+    if (srv.stopCmd) L.push(`stop_cmd           = ${_s(srv.stopCmd)}`);
     L.push('');
 
     // Streams section (RT mode only)
@@ -3280,7 +3283,7 @@ export function TomlDrawer({ config, opened, onClose, streams }: { config: MrtkP
     }
 
     return L.join('\n');
-  }, [config, isPppRtk, streams]);
+  }, [config, isClasPreview, streams]);
 
   return (
     <Drawer opened={opened} onClose={onClose} position="right" size="md" title="TOML Configuration Preview">
