@@ -268,6 +268,14 @@ const SECTION_ANCHORS: Record<string, string> = {
   'satellites':         '#positioning',
   'advanced':           '#positioning-corrections',
   'clas-ppk':           '#positioning-clas',
+  'clas-amb':           '#positioning-clas-ambiguities',
+  'clas-res':           '#positioning-clas-resilience',
+  'spp':                '#positioning',
+  'relative':           '#positioning-relative',
+  'ppp':                '#positioning-ppp',
+  'madoca':             '#positioning-madoca',
+  'kf-iterations':      '#kalman-filter',
+  'input-options':      '#input-rinex',
   'ar-mode':            '#ambiguity-resolution',
   'ar-thresholds':      '#ambiguity-resolution-thresholds',
   'ar-counters':        '#ambiguity-resolution-counters',
@@ -279,8 +287,8 @@ const SECTION_ANCHORS: Record<string, string> = {
   'kf-measurement':     '#kalman-filter-measurement-error',
   'kf-initial-std':     '#kalman-filter-initial-std-deviation',
   'kf-process':         '#kalman-filter-process-noise',
-  'adaptive-filter':    '#adaptive-filter',
-  'signals':            '#signal-selection',
+  'adaptive-filter':    '#positioning-clas-adaptive-filter',
+  'signals':            '#positioning-signal-selection',
   'receiver':           '#receiver',
   'ppp-bias':           '#receiver',
   'sat-mode':           '#receiver',
@@ -2083,7 +2091,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <SectionHeader title="SPP / Robust QC" anchor="spp" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ignore Chi Error</Text>
+                  <OptionLabel metaKey="positioning.spp.ignore_chi_error" style={OPT_LABEL_STYLE} />
                   <Switch size="xs" checked={config.receiver.ignoreChiError}
                     onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ignoreChiError: e.currentTarget.checked } })} />
                 </Group>

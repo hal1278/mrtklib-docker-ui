@@ -36,6 +36,13 @@ const OPTION_META_DEF = {
     label: 'Positioning Mode',
     docsAnchor: '#positioning',
   },
+  'positioning.spp.ignore_chi_error': {
+    label: 'Ignore Chi Error',
+    description:
+      'Skip the chi-square test on the single-point (SPP) solution used to ' +
+      'seed the filter. Enable when the SPP chi-square check is too strict.',
+    docsAnchor: '#positioning-spp',
+  },
   'positioning.correction': {
     label: 'Correction',
     description:
