@@ -1564,40 +1564,18 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
-                {/* Ratio 1–6 paired 3 per row */}
+                {/* Ratio 1 / 5 / 6 (v0.7.6: ratio2/3/4 removed) */}
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Ratio 1 / 2 / 3" style={OPT_LABEL_STYLE}
+                  <ComboLabel label="Ratio 1 / 5 / 6" style={OPT_LABEL_STYLE}
                     fields={[
                       { name: 'Ratio 1', metaKey: 'ar.thresholds.ratio1' },
-                      { name: 'Ratio 2', metaKey: 'ar.thresholds.ratio2' },
-                      { name: 'Ratio 3', metaKey: 'ar.thresholds.ratio3' },
+                      { name: 'Ratio 5', metaKey: 'ar.thresholds.ratio5' },
+                      { name: 'Ratio 6', metaKey: 'ar.thresholds.ratio6' },
                     ]} />
                   <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
                     <NumberInput size="xs" title="Ratio 1" aria-label="Ratio 1" value={config.ambiguityResolution.thresholds.ratio1}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio1: Number(value)}}})}
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio1')}
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Ratio 2" aria-label="Ratio 2" value={config.ambiguityResolution.thresholds.ratio2}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio2: Number(value)}}})}
-                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio2')}
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Ratio 3" aria-label="Ratio 3" value={config.ambiguityResolution.thresholds.ratio3}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio3: Number(value)}}})}
-                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio3')}
-                      style={{ flex: 1, minWidth: 0 }} />
-                  </Group>
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Ratio 4 / 5 / 6" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'Ratio 4', metaKey: 'ar.thresholds.ratio4' },
-                      { name: 'Ratio 5', metaKey: 'ar.thresholds.ratio5' },
-                      { name: 'Ratio 6', metaKey: 'ar.thresholds.ratio6' },
-                    ]} />
-                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Ratio 4" aria-label="Ratio 4" value={config.ambiguityResolution.thresholds.ratio4}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio4: Number(value)}}})}
-                      decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio4')}
                       style={{ flex: 1, minWidth: 0 }} />
                     <NumberInput size="xs" title="Ratio 5" aria-label="Ratio 5" value={config.ambiguityResolution.thresholds.ratio5}
                       onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, ratio5: Number(value)}}})}
@@ -1608,6 +1586,29 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       decimalScale={4} hideControls disabled={modeDisabled('ar.thresholds.ratio6')}
                       style={{ flex: 1, minWidth: 0 }} />
                   </Group>
+                </Group>
+                {/* Max PDOP AR/Hold (v0.7.6) */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Max PDOP AR/Hold" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'AR' }, { name: 'Hold' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Max PDOP AR (0: no limit)" aria-label="Max PDOP AR" value={config.ambiguityResolution.thresholds.maxPdopAr}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, maxPdopAr: Number(value)}}})}
+                      min={0} decimalScale={1} hideControls disabled={modeDisabled('ar.mode')}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Max PDOP Hold (0: no limit)" aria-label="Max PDOP Hold" value={config.ambiguityResolution.thresholds.maxPdopHold}
+                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, maxPdopHold: Number(value)}}})}
+                      min={0} decimalScale={1} hideControls disabled={modeDisabled('ar.mode')}
+                      style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
+                {/* Reference DOP (v0.7.6) */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Reference DOP</Text>
+                  <Select size="xs" value={config.ambiguityResolution.thresholds.referenceDop}
+                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, thresholds: {...config.ambiguityResolution.thresholds, referenceDop: value}}})}
+                    data={[{ value: 'zd', label: 'Zero-Diff' }, { value: 'sd', label: 'Single-Diff' }]}
+                    disabled={modeDisabled('ar.mode')} style={{ flex: 1 }} />
                 </Group>
               </Stack>
 
@@ -1756,20 +1757,11 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             <Stack gap="xs">
               {/* Filter Settings */}
               <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
-                  <ComboLabel label="Iterations / Sync" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'Iterations' },
-                      { name: 'Sync' },
-                    ]} />
-                  <Group wrap="nowrap" align="center" gap="md" style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Iterations" aria-label="Iterations" value={config.kalmanFilter.iterations}
-                      onChange={(value: any) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, iterations: Number(value)}})}
-                      min={1} max={10} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <Switch size="xs" title="Sync Solution" checked={config.kalmanFilter.syncSolution}
-                      onChange={(e: any) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, syncSolution: e.currentTarget.checked}})} />
-                  </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iterations</Text>
+                  <NumberInput size="xs" value={config.kalmanFilter.iterations}
+                    onChange={(value: any) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, iterations: Number(value)}})}
+                    min={1} max={10} hideControls style={{ flex: 1 }} />
                 </Group>
               </Stack>
 
