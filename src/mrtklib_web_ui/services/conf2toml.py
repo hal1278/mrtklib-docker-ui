@@ -487,8 +487,18 @@ def _toml_value(val: Any) -> str:
     if isinstance(val, list):
         items = ", ".join(_toml_value(v) for v in val)
         return f"[{items}]"
-    # String — quote it
-    return f'"{val}"'
+    # String — quote as a TOML basic string, escaping per the TOML spec so
+    # values with backslashes (Windows paths), quotes, or control chars stay
+    # valid (local hardening over upstream conf2toml).
+    esc = (
+        str(val)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
+    return f'"{esc}"'
 
 
 def write_toml(sections: dict[str, OrderedDict], out_path: Path, source_name: str = "") -> None:

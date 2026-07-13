@@ -29,11 +29,11 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'signals', 'signal mode', 'elevation mask', 'snr mask', 'ionosphere', 'troposphere',
     'atmosphere', 'satellite ephemeris', 'ephemeris', 'constellations', 'gps', 'glonass',
     'galileo', 'qzss', 'sbas', 'beidou', 'irnss', 'excluded satellites',
-    'positioning.positioning_mode', 'positioning.filter_type', 'positioning.frequency',
-    'positioning.signals', 'positioning.signal_mode', 'positioning.elevation_mask',
+    'positioning.mode', 'positioning.correction', 'positioning.solution_type', 'positioning.frequency',
+    'positioning.signals', 'positioning.elevation_mask',
     'positioning.snr_mask', 'positioning.atmosphere.ionosphere', 'positioning.atmosphere.troposphere',
-    'positioning.satellite_ephemeris', 'positioning.ephemeris_option', 'positioning.constellations',
-    'positioning.excluded_satellites',
+    'positioning.satellite_ephemeris', 'positioning.constellations',
+    'positioning.excluded_sats',
     // Receiver Dynamics + Earth Tides + corrections toggles (relocated into Basic Strategy)
     'earth tides', 'tidal correction', 'receiver dynamics', 'sat pcv', 'rec pcv',
     'satellite antenna pcv', 'receiver antenna pcv', 'phase windup', 'reject eclipse',
@@ -70,12 +70,12 @@ const SECTION_SEARCH: Record<string, string[]> = {
   ],
 
   kf: [
-    'kalman filter', 'iterations', 'sync solution', 'code phase ratio', 'phase error',
+    'kalman filter', 'iterations', 'code phase ratio', 'phase error',
     'phase error base', 'phase error elevation', 'phase error baseline', 'doppler', 'ura ratio',
     'accel noise', 'acceleration noise', 'horizontal', 'vertical', 'iono noise', 'ifb noise',
     'clock stability', 'phase bias', 'process noise', 'ztd', 'position noise', 'iono time const',
     'initial std', 'initial standard deviation', 'measurement error',
-    'kalman_filter.iterations', 'kalman_filter.sync_solution',
+    'kalman_filter.iterations',
     'kalman_filter.measurement_error.code_phase_ratio_l1', 'kalman_filter.measurement_error.code_phase_ratio_l2',
     'kalman_filter.measurement_error.code_phase_ratio_l5', 'kalman_filter.measurement_error.phase',
     'kalman_filter.measurement_error.phase_elevation', 'kalman_filter.measurement_error.phase_baseline',
@@ -153,7 +153,7 @@ const SECTION_SEARCH: Record<string, string[]> = {
 
   format: [
     'solution format', 'output header', 'processing options', 'velocity', 'time format',
-    'decimals', 'lat lon format', 'field separator', 'datum', 'height', 'geoid model',
+    'decimals', 'lat lon format', 'field separator', 'height', 'geoid model',
     'static solution mode', 'single on outage', 'nmea rmc gga', 'nmea gsa gsv',
     'solution status', 'debug trace', 'trace level',
     'output.solution_format', 'output.output_header', 'output.output_processing_options',

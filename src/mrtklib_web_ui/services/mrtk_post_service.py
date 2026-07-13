@@ -100,6 +100,7 @@ class AtmosphereConfig(BaseModel):
 
 class PositioningConfig(BaseModel):
     positioning_mode: str = "kinematic"
+    correction: str = "auto"   # SSR/PPP provider: none/igs/igs-rts/qzs-madoca/gal-has/bds-b2b/qzs-clas
     frequency: str = "l1+l2"
     signal_mode: str = "frequency"
     signals: str = ""
@@ -477,6 +478,7 @@ class MrtkPostService:
         # ── [positioning] ─────────────────────────────────────────────────
         lines.append("[positioning]")
         lines.append(f"mode                = {_s(pos_mode_map.get(p.positioning_mode, 'kinematic'))}")
+        lines.append(f"correction          = {_s(p.correction)}")
 
         is_madoca_ppp = p.positioning_mode in ("ppp-kinematic", "ppp-static", "ppp-fixed")
         use_signals = p.signals.strip() != "" and not is_madoca_ppp

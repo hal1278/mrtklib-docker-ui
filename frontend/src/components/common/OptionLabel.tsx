@@ -4,6 +4,17 @@ import { IconQuestionMark } from '@tabler/icons-react';
 import { OPTION_META, DOCS_BASE } from '../../config/optionMeta';
 import type { OptionMetaKey, OptionMeta } from '../../config/optionMeta';
 
+/**
+ * ActionIcon element props for the `?` help icon: a real external link when a
+ * docs URL exists, otherwise a plain button. Avoids rendering an `<a>` with an
+ * undefined href (a focusable link with no destination that confuses AT).
+ */
+function helpIconProps(href: string | undefined) {
+  return href
+    ? ({ component: 'a', href, target: '_blank', rel: 'noopener noreferrer' } as const)
+    : ({ component: 'button', type: 'button' } as const);
+}
+
 interface OptionLabelProps {
   metaKey: OptionMetaKey;
   fallback?: string;
@@ -53,10 +64,7 @@ export function ComboLabel({
           styles={{ tooltip: { whiteSpace: 'pre-line' } }}
         >
           <ActionIcon
-            component="a"
-            href={anchor ? DOCS_BASE + anchor : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...helpIconProps(anchor ? DOCS_BASE + anchor : undefined)}
             size={14}
             variant="subtle"
             color="gray"
@@ -89,10 +97,7 @@ export function MetaHelp({ metaKey }: { metaKey: OptionMetaKey }) {
       events={{ hover: true, focus: true, touch: true }}
     >
       <ActionIcon
-        component="a"
-        href={meta.docsAnchor ? DOCS_BASE + meta.docsAnchor : undefined}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...helpIconProps(meta.docsAnchor ? DOCS_BASE + meta.docsAnchor : undefined)}
         size={14}
         variant="subtle"
         color="gray"
@@ -136,10 +141,7 @@ export function OptionLabel({ metaKey, fallback, style }: OptionLabelProps) {
           events={{ hover: true, focus: true, touch: true }}
         >
           <ActionIcon
-            component="a"
-            href={meta?.docsAnchor ? DOCS_BASE + meta.docsAnchor : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...helpIconProps(meta?.docsAnchor ? DOCS_BASE + meta.docsAnchor : undefined)}
             size={14}
             variant="subtle"
             color="gray"
