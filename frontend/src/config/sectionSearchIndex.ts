@@ -86,30 +86,53 @@ const SECTION_SEARCH: Record<string, string[]> = {
 
   clas: [
     'clas', 'ppp-rtk', 'vrs', 'vrs-rtk', 'grid radius', 'grid selection radius', 'receiver type',
-    'ar significance level', 'significance level', 'alpha', 'ambiguity_resolution.thresholds.alpha',
-    'uncertainty x', 'uncertainty y', 'uncertainty z', 'position uncertainty',
+    'enhanced spp seed', 'seed', 'ar significance level', 'significance level', 'alpha',
+    'ambiguity_resolution.thresholds.alpha',
     'positioning.clas.grid_selection_radius', 'positioning.clas.receiver_type',
-    'positioning.clas.position_uncertainty_x', 'positioning.clas.position_uncertainty_y',
-    'positioning.clas.position_uncertainty_z',
-    // Iono Comp. + ISB + Phase Shift (relocated here — PPP-RTK / VRS only)
-    'iono compensation', 'iono comp', 'isb', 'inter-system bias', 'phase shift',
-    'receiver.iono_correction', 'receiver.isb', 'receiver.phase_shift',
-    // Adaptive Filter (merged here — PPP-RTK / VRS only)
+    'positioning.clas.enhanced_spp_seed',
+    // CLAS Ambiguities (positioning.clas.ambiguities)
+    'clas ambiguities', 'isb', 'inter-system bias', 'phase shift', 'reference type',
+    'positioning.clas.ambiguities.isb', 'positioning.clas.ambiguities.phase_shift',
+    'positioning.clas.ambiguities.reference_type',
+    // CLAS Resilience (positioning.clas.resilience)
+    'clas resilience', 'max obs loss', 'float count', 'l6 merge', 'reset interval',
+    'positioning.clas.resilience.max_obs_loss', 'positioning.clas.resilience.float_count',
+    'positioning.clas.resilience.l6_merge', 'positioning.clas.resilience.reset_interval',
+    // Adaptive Filter (positioning.clas.adaptive_filter — PPP-RTK / VRS only)
     'adaptive filter', 'iono forgetting factor', 'iono gain', 'pva forgetting factor',
     'pva gain', 'forgetting factor',
-    'adaptive_filter.enabled', 'adaptive_filter.iono_forgetting', 'adaptive_filter.iono_gain',
-    'adaptive_filter.pva_forgetting', 'adaptive_filter.pva_gain',
+    'positioning.clas.adaptive_filter.enabled', 'positioning.clas.adaptive_filter.iono_forgetting',
+    'positioning.clas.adaptive_filter.iono_gain', 'positioning.clas.adaptive_filter.pva_forgetting',
+    'positioning.clas.adaptive_filter.pva_gain',
   ],
 
-  receiver: [
-    'max age', 'baseline length',
-    'baseline sigma', 'ignore chi error', 'bds-2 bias', 'ppp sat clock bias', 'ppp sat phase bias',
-    'uncorrected bias', 'max bias dt', 'satellite mode', 'reference type', 'signal selection',
-    'receiver.max_age',
-    'receiver.baseline_length', 'receiver.baseline_sigma', 'receiver.ignore_chi_error',
-    'receiver.bds2_bias', 'receiver.ppp_sat_clock_bias', 'receiver.ppp_sat_phase_bias',
-    'receiver.uncorr_bias', 'receiver.max_bias_dt', 'receiver.satellite_mode', 'receiver.reference_type',
-    'signal_selection.gps', 'signal_selection.qzs', 'signal_selection.galileo',
+  spp: [
+    'spp', 'single point', 'robust', 'igg3', 'igg-iii', 'robust k0', 'robust k1',
+    'tdcp', 'tdcp jump', 'ignore chi error', 'chi error',
+    'positioning.robust', 'positioning.robust_k0', 'positioning.robust_k1',
+    'positioning.tdcp', 'positioning.tdcp_jump', 'positioning.spp.ignore_chi_error',
+  ],
+
+  relative: [
+    'relative', 'differential', 'rtk', 'max age', 'baseline length', 'baseline sigma',
+    'time interpolation', 'base interpolation',
+    'positioning.relative.max_age', 'positioning.relative.baseline_length',
+    'positioning.relative.baseline_sigma', 'positioning.relative.time_interpolation',
+  ],
+
+  signals: [
+    'signal selection', 'signals', 'gps', 'qzss', 'galileo', 'beidou', 'bds-2', 'bds-3',
+    'l1/l2', 'l1/l5', 'e1/e5a', 'b1i/b3i',
+    'signals.gps', 'signals.qzs', 'signals.galileo', 'signals.bds2', 'signals.bds3',
+  ],
+
+  ppp: [
+    'ppp', 'precise point positioning', 'madoca', 'iono compensation', 'iono comp',
+    'ppp sat clock bias', 'ppp sat phase bias', 'satellite clock bias', 'satellite phase bias',
+    'uncorrected bias', 'drop uncorrected code', 'clock jump', 'max bias dt', 'ppp option', 'options',
+    'positioning.madoca.iono_correction', 'positioning.ppp.satellite_clock_bias',
+    'positioning.ppp.satellite_phase_bias', 'positioning.ppp.drop_uncorrected_code',
+    'positioning.ppp.clock_jump', 'positioning.ppp.max_bias_dt', 'positioning.ppp.options',
   ],
 
   antenna: [
@@ -136,18 +159,26 @@ const SECTION_SEARCH: Record<string, string[]> = {
   files: [
     'satellite antenna pcv file', 'receiver antenna pcv file', 'atx', 'geoid data file',
     'dcb data file', 'eop data file', 'ocean loading file', 'blq', 'ionosphere data file',
-    'elevation mask file', 'fcb file', 'bias sinex file', 'cssr grid file', 'isb table file',
-    'phase cycle file',
+    'fcb file', 'bias sinex file', 'cssr grid file', 'isb table file',
+    'phase cycle file', 'temp dir', 'trace file', 'command file', 'cmd file',
     'files.satellite_atx', 'files.receiver_atx', 'files.geoid', 'files.dcb', 'files.eop',
-    'files.ocean_loading', 'files.ionosphere', 'files.elevation_mask_file', 'files.fcb',
+    'files.ocean_loading', 'files.ionosphere', 'files.fcb',
     'files.bias_sinex', 'files.cssr_grid', 'files.isb_table', 'files.phase_cycle',
+    'files.temp_dir', 'files.trace', 'files.cmd_file_1', 'files.cmd_file_2', 'files.cmd_file_3',
+  ],
+
+  'input-options': [
+    'input options', 'input decoding', 'rinex option', 'rtcm option', 'rtcm options',
+    'sbas satellite', 'decode',
+    'input.rinex.option_1', 'input.rinex.option_2', 'input.rtcm.options', 'input.sbas.satellite',
   ],
 
   server: [
-    'base interpolation', 'time interpolation', 'sbas satellite', 'rinex option', 'ppp option',
-    'rtcm option', 'l6 margin', 'rtkrcv',
-    'server.time_interpolation', 'server.sbas_satellite', 'server.rinex_option_1',
-    'server.rinex_option_2', 'server.ppp_option', 'server.rtcm_option', 'server.l6_margin',
+    'server', 'rtkrcv', 'cycle', 'timeout', 'reconnect', 'nmea cycle', 'buffer size',
+    'nav msg select', 'proxy', 'swap margin', 'start cmd', 'stop cmd',
+    'server.cycle_ms', 'server.timeout_ms', 'server.reconnect_ms', 'server.nmea_cycle_ms',
+    'server.buffer_size', 'server.nav_msg_select', 'server.proxy', 'server.swap_margin',
+    'server.start_cmd', 'server.stop_cmd',
   ],
 };
 

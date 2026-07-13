@@ -496,6 +496,12 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
   const validCorr = validCorrections(config.positioning.positioningMode);
   // Adaptive Filter applies only to PPP-RTK / VRS-RTK.
   const isAdaptiveMode = ['ppp-rtk', 'vrs-rtk'].includes(config.positioning.positioningMode);
+  // Relative (differential) positioning modes — those that use a base station.
+  const isRelativeMode = ['dgps', 'kinematic', 'static', 'moving-base', 'fixed'].includes(
+    config.positioning.positioningMode,
+  );
+  // CLAS group (grid/ambiguities/resilience/adaptive) applies to PPP-RTK / VRS-RTK.
+  const isClasMode = isAdaptiveMode;
 
   // ── Category rail data (console redesign Phase 3b re-skin) ──
   // Same sections as before; only the presentation changes. The mode-specific
@@ -514,16 +520,20 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
       : []),
     { label: 'Positioning', icon: <IconSatellite size={12} />, items: [
         { label: 'Mode', section: 'mode' },
+        { label: 'SPP', section: 'spp' },
+        { label: 'Relative', section: 'relative' },
+        { label: 'Signal Selection', section: 'signals' },
+        { label: 'PPP', section: 'ppp' },
+        { label: 'CLAS PPP-RTK/VRS', section: 'clas' },
         { label: 'AR', section: 'ar' },
         { label: 'Kalman Filter', section: 'kf' },
-        { label: 'CLAS PPP-RTK/VRS', section: 'clas' },
       ] },
-    { label: 'Environment', icon: <IconRadar size={12} />, items: [
-        { label: 'Receiver', section: 'receiver' },
+    { label: 'Station', icon: <IconRadar size={12} />, items: [
         { label: 'Antenna', section: 'antenna' },
       ] },
     { label: 'Output', icon: <IconFileExport size={12} />, items: [
         { label: 'Format', section: 'format' },
+        { label: 'Input Options', section: 'input-options' },
         { label: 'Files', section: 'files' },
         { label: 'Server', section: 'server' },
       ] },
@@ -1343,39 +1353,21 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   <NumberInput size="xs"
                     value={config.positioning.clas.gridSelectionRadius}
                     onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, gridSelectionRadius: Number(v) || 0 } } })}
-                    min={0} hideControls style={{ flex: 1 }} />
+                    min={0} hideControls disabled={!isClasMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Receiver Type</Text>
                   <TextInput size="xs"
                     value={config.positioning.clas.receiverType}
                     onChange={(e) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, receiverType: e.currentTarget.value } } })}
-                    placeholder="e.g. Trimble NetR9" style={{ flex: 1 }} />
+                    placeholder="e.g. Trimble NetR9" disabled={!isClasMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Uncertainty XYZ (m)" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'X' },
-                      { name: 'Y' },
-                      { name: 'Z' },
-                    ]} />
-                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Uncertainty XYZ X" aria-label="Uncertainty X"
-                      value={config.positioning.clas.positionUncertaintyX}
-                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyX: Number(v) || 0 } } })}
-                      min={0} decimalScale={1} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Uncertainty XYZ Y" aria-label="Uncertainty Y"
-                      value={config.positioning.clas.positionUncertaintyY}
-                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyY: Number(v) || 0 } } })}
-                      min={0} decimalScale={1} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Uncertainty XYZ Z" aria-label="Uncertainty Z"
-                      value={config.positioning.clas.positionUncertaintyZ}
-                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, positionUncertaintyZ: Number(v) || 0 } } })}
-                      min={0} decimalScale={1} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                  </Group>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Enhanced SPP Seed</Text>
+                  <Select size="xs" value={config.positioning.clas.enhancedSppSeed}
+                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, enhancedSppSeed: value } } })}
+                    data={[{ value: 'off', label: 'OFF' }, { value: 'cn0+tdcp', label: 'C/N0 + TDCP' }, { value: 'cn0+tdcp+robust', label: 'C/N0 + TDCP + Robust' }]}
+                    disabled={!isClasMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <OptionLabel metaKey="ar.thresholds.alpha" style={OPT_LABEL_STYLE} />
@@ -1384,22 +1376,55 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     data={['0.1%', '0.5%', '1%', '5%', '10%', '20%']}
                     disabled={modeDisabled('ar.thresholds.alpha')} style={{flex:1}} />
                 </Group>
-                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
-                  <Switch size="xs" checked={config.receiver.ionoCorrection}
-                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked } })} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>ISB</Text>
-                  <Switch size="xs" checked={config.receiver.isb}
-                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, isb: e.currentTarget.checked } })} />
-                </Group>
+              </Stack>
+
+              <SectionHeader title="CLAS Ambiguities" anchor="clas-amb" />
+              <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Phase Shift</Text>
-                  <Select size="xs" value={config.receiver.phaseShift}
+                  <Select size="xs" value={config.receiver.phaseShift} disabled={!isClasMode}
                     onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, phaseShift: value } })}
                     data={[{ value: 'off', label: 'OFF' }, { value: 'table', label: 'Table' }]}
                     style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>ISB</Text>
+                  <Switch size="xs" checked={config.receiver.isb} disabled={!isClasMode}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, isb: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Reference Type</Text>
+                  <TextInput size="xs" value={config.receiver.referenceType} disabled={!isClasMode}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, referenceType: e.currentTarget.value } })}
+                    placeholder="CLAS" style={{ flex: 1 }} />
+                </Group>
+              </Stack>
+
+              <SectionHeader title="CLAS Resilience" anchor="clas-res" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Obs Loss (%)</Text>
+                  <NumberInput size="xs" value={config.server.maxObsLoss ?? 90} disabled={!isClasMode}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, maxObsLoss: Number(v) || 0 } })}
+                    min={0} max={100} decimalScale={1} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Float Count</Text>
+                  <NumberInput size="xs" value={config.server.floatCount ?? 15} disabled={!isClasMode}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, floatCount: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>L6 Merge</Text>
+                  <NumberInput size="xs" value={config.positioning.clas.l6Merge} disabled={!isClasMode}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, l6Merge: Number(v) || 0 } } })}
+                    min={0} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Reset Interval</Text>
+                  <NumberInput size="xs" value={config.positioning.clas.resetInterval} disabled={!isClasMode}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, clas: { ...config.positioning.clas, resetInterval: Number(v) || 0 } } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
               </Stack>
 
@@ -2025,263 +2050,163 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
           )}
 
           {/* ── Receiver section ── */}
-          {activeSection === 'receiver' && (
+          {activeSection === 'spp' && (
             <Stack gap="xs">
-              <SectionHeader title="Receiver Options" anchor="receiver" />
+              <SectionHeader title="SPP / Robust QC" anchor="spp" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ignore Chi Error</Text>
+                  <Switch size="xs" checked={config.receiver.ignoreChiError}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ignoreChiError: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust</Text>
+                  <Select size="xs" value={config.positioning.robust}
+                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, robust: value } })}
+                    data={[{ value: 'off', label: 'OFF' }, { value: 'igg3', label: 'IGG-III' }]}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust K0</Text>
+                  <NumberInput size="xs" value={config.positioning.robustK0}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK0: Number(v) || 0 } })}
+                    disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust K1</Text>
+                  <NumberInput size="xs" value={config.positioning.robustK1}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK1: Number(v) || 0 } })}
+                    disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>TDCP</Text>
+                  <Select size="xs" value={config.positioning.tdcp}
+                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcp: value } })}
+                    data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>TDCP Jump (m)</Text>
+                  <NumberInput size="xs" value={config.positioning.tdcpJump}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcpJump: Number(v) || 0 } })}
+                    disabled={config.positioning.tdcp === 'off'} decimalScale={1} hideControls style={{ flex: 1 }} />
+                </Group>
+              </Stack>
+            </Stack>
+          )}
+
+          {activeSection === 'relative' && (
+            <Stack gap="xs">
+              <SectionHeader title="Relative Positioning" anchor="relative" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Age (s)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.maxAge}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, maxAge: Number(value) },
-                      })
-                    }
-                    min={0}
-                    decimalScale={1}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <NumberInput size="xs" value={config.receiver.maxAge}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, maxAge: Number(value) } })}
+                    min={0} decimalScale={1} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Baseline Len (m)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.baselineLength}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, baselineLength: Number(value) },
-                      })
-                    }
-                    min={0}
-                    decimalScale={1}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <NumberInput size="xs" value={config.receiver.baselineLength}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineLength: Number(value) } })}
+                    min={0} decimalScale={1} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Baseline Sigma (m)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.baselineSigma}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, baselineSigma: Number(value) },
-                      })
-                    }
-                    min={0}
-                    decimalScale={4}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <NumberInput size="xs" value={config.receiver.baselineSigma}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineSigma: Number(value) } })}
+                    min={0} decimalScale={4} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
                 </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Ignore Chi Error</Text>
-                  <Switch
-                    size="xs"
-                    checked={config.receiver.ignoreChiError}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, ignoreChiError: e.currentTarget.checked },
-                      })
-                    }
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>BDS-2 Bias</Text>
-                  <Switch
-                    size="xs"
-                    checked={config.receiver.bds2Bias}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, bds2Bias: e.currentTarget.checked },
-                      })
-                    }
-                  />
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Time Interpolation</Text>
+                  <Switch size="xs" checked={config.server.timeInterpolation ?? false} disabled={!isRelativeMode}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, timeInterpolation: e.currentTarget.checked } })} />
                 </Group>
               </Stack>
+            </Stack>
+          )}
 
-              <SectionHeader title="PPP Bias" anchor="ppp-bias" />
-              <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Clock Bias</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.pppSatClockBias}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, pppSatClockBias: Number(value) || 0 },
-                      })
-                    }
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Phase Bias</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.pppSatPhaseBias}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, pppSatPhaseBias: Number(value) || 0 },
-                      })
-                    }
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncorrected Bias</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.uncorrBias}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, uncorrBias: Number(value) || 0 },
-                      })
-                    }
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Bias dt</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.maxBiasDt}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, maxBiasDt: Number(value) || 0 },
-                      })
-                    }
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-              </Stack>
-
-              <SectionHeader title="Satellite Mode" anchor="sat-mode" />
-              <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Satellite Mode</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.receiver.satelliteMode}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, satelliteMode: Number(value) || 0 },
-                      })
-                    }
-                    min={0}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Reference Type</Text>
-                  <TextInput
-                    size="xs"
-                    value={config.receiver.referenceType}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        receiver: { ...config.receiver, referenceType: e.currentTarget.value },
-                      })
-                    }
-                    style={{ flex: 1 }}
-                  />
-                </Group>
-              </Stack>
-
-              <Divider my={4} />
+          {activeSection === 'signals' && (
+            <Stack gap="xs">
+              <SectionHeader title="Signal Selection" anchor="signals" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>GPS</Text>
-                  <Select
-                    size="xs"
-                    value={config.signalSelection.gps}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        signalSelection: { ...config.signalSelection, gps: value },
-                      })
-                    }
-                    data={['L1/L2', 'L1/L5', 'L1/L2/L5']}
-                    style={{ flex: 1 }}
-                  />
+                  <Select size="xs" value={config.signalSelection.gps} disabled={useSignals}
+                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, gps: value } })}
+                    data={['L1/L2', 'L1/L5', 'L1/L2/L5']} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>QZSS</Text>
-                  <Select
-                    size="xs"
-                    value={config.signalSelection.qzs}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        signalSelection: { ...config.signalSelection, qzs: value },
-                      })
-                    }
-                    data={['L1/L5', 'L1/L2', 'L1/L5/L2']}
-                    style={{ flex: 1 }}
-                  />
+                  <Select size="xs" value={config.signalSelection.qzs} disabled={useSignals}
+                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, qzs: value } })}
+                    data={['L1/L5', 'L1/L2', 'L1/L5/L2']} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Galileo</Text>
-                  <Select
-                    size="xs"
-                    value={config.signalSelection.galileo}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        signalSelection: { ...config.signalSelection, galileo: value },
-                      })
-                    }
-                    data={['E1/E5a', 'E1/E5b', 'E1/E6', 'E1/E5a/E5b/E6', 'E1/E5a/E6/E5b']}
-                    style={{ flex: 1 }}
-                  />
+                  <Select size="xs" value={config.signalSelection.galileo} disabled={useSignals}
+                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, galileo: value } })}
+                    data={['E1/E5a', 'E1/E5b', 'E1/E6', 'E1/E5a/E5b/E6', 'E1/E5a/E6/E5b']} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>BDS-2</Text>
-                  <Select
-                    size="xs"
-                    value={config.signalSelection.bds2}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        signalSelection: { ...config.signalSelection, bds2: value },
-                      })
-                    }
-                    data={['B1I/B3I', 'B1I/B2I', 'B1I/B3I/B2I']}
-                    style={{ flex: 1 }}
-                  />
+                  <Select size="xs" value={config.signalSelection.bds2} disabled={useSignals}
+                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds2: value } })}
+                    data={['B1I/B3I', 'B1I/B2I', 'B1I/B3I/B2I']} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>BDS-3</Text>
-                  <Select
-                    size="xs"
-                    value={config.signalSelection.bds3}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        signalSelection: { ...config.signalSelection, bds3: value },
-                      })
-                    }
-                    data={['B1I/B3I', 'B1I/B2a', 'B1I/B3I/B2a']}
-                    style={{ flex: 1 }}
-                  />
+                  <Select size="xs" value={config.signalSelection.bds3} disabled={useSignals}
+                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds3: value } })}
+                    data={['B1I/B3I', 'B1I/B2a', 'B1I/B3I/B2a']} style={{ flex: 1 }} />
+                </Group>
+              </Stack>
+            </Stack>
+          )}
+
+          {activeSection === 'ppp' && (
+            <Stack gap="xs">
+              <SectionHeader title="PPP" anchor="ppp" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
+                  <Switch size="xs" checked={config.receiver.ionoCorrection} disabled={!isPPP}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Clock Bias</Text>
+                  <NumberInput size="xs" value={config.receiver.pppSatClockBias} disabled={!isPPP}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatClockBias: Number(value) || 0 } })}
+                    hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Phase Bias</Text>
+                  <NumberInput size="xs" value={config.receiver.pppSatPhaseBias} disabled={!isPPP}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatPhaseBias: Number(value) || 0 } })}
+                    hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncorrected Bias</Text>
+                  <NumberInput size="xs" value={config.receiver.uncorrBias} disabled={!isPPP}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, uncorrBias: Number(value) || 0 } })}
+                    hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Clock Jump</Text>
+                  <Switch size="xs" checked={config.receiver.clockJump} disabled={!isPPP}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, clockJump: e.currentTarget.checked } })} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Max Bias dt</Text>
+                  <NumberInput size="xs" value={config.receiver.maxBiasDt} disabled={!isPPP}
+                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, maxBiasDt: Number(value) || 0 } })}
+                    hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Options</Text>
+                  <TextInput size="xs" value={config.server.pppOption ?? ''} disabled={!isPPP}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, pppOption: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
                 </Group>
               </Stack>
             </Stack>
@@ -2904,150 +2829,103 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             </Stack>
           )}
 
+          {/* ── Input Options section (RINEX / RTCM / SBAS decoding) ── */}
+          {activeSection === 'input-options' && (
+            <Stack gap="xs">
+              <SectionHeader title="Input Decoding" anchor="input-options" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RINEX Option 1</Text>
+                  <TextInput size="xs" value={config.server.rinexOption1 ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, rinexOption1: e.currentTarget.value } })}
+                    placeholder="e.g. -GL2X" style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RINEX Option 2</Text>
+                  <TextInput size="xs" value={config.server.rinexOption2 ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, rinexOption2: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RTCM Options</Text>
+                  <TextInput size="xs" value={config.server.rtcmOption ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, rtcmOption: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>SBAS Satellite</Text>
+                  <TextInput size="xs" value={config.server.sbasSatellite ?? '0'}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, sbasSatellite: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
+                </Group>
+              </Stack>
+            </Stack>
+          )}
+
           {/* ── Server section ── */}
           {activeSection === 'server' && (
             <Stack gap="xs">
               <SectionHeader title="Server Options" anchor="server-options" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Base Interp.</Text>
-                  <Select
-                    size="xs"
-                    value={config.server.timeInterpolation ? 'on' : 'off'}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          timeInterpolation: value === 'on',
-                        },
-                      })
-                    }
-                    data={[
-                      { value: 'off', label: 'OFF' },
-                      { value: 'on', label: 'ON' },
-                    ]}
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Cycle (ms)</Text>
+                  <NumberInput size="xs" value={config.server.cycleMs ?? 10}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, cycleMs: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
-
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>SBAS Sat (0=All)</Text>
-                  <NumberInput
-                    size="xs"
-                    value={Number(config.server.sbasSatellite)}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          sbasSatellite: String(value),
-                        },
-                      })
-                    }
-                    min={0}
-                    max={255}
-                    step={1}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Timeout (ms)</Text>
+                  <NumberInput size="xs" value={config.server.timeoutMs ?? 10000}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, timeoutMs: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
-              </Stack>
-
-              <Divider my={4} />
-              <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RINEX (Rover)</Text>
-                  <TextInput
-                    size="xs"
-                    placeholder="-E -GL ..."
-                    value={config.server.rinexOption1}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          rinexOption1: e.currentTarget.value,
-                        },
-                      })
-                    }
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Reconnect (ms)</Text>
+                  <NumberInput size="xs" value={config.server.reconnectMs ?? 10000}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, reconnectMs: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
-
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RINEX (Base)</Text>
-                  <TextInput
-                    size="xs"
-                    placeholder="-E -GL ..."
-                    value={config.server.rinexOption2}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          rinexOption2: e.currentTarget.value,
-                        },
-                      })
-                    }
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>NMEA Cycle (ms)</Text>
+                  <NumberInput size="xs" value={config.server.nmeaCycleMs ?? 5000}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, nmeaCycleMs: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
-
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Option</Text>
-                  <TextInput
-                    size="xs"
-                    value={config.server.pppOption}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          pppOption: e.currentTarget.value,
-                        },
-                      })
-                    }
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Buffer Size</Text>
+                  <NumberInput size="xs" value={config.server.bufferSize ?? 32768}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, bufferSize: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
                 </Group>
-
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>RTCM Option</Text>
-                  <TextInput
-                    size="xs"
-                    value={config.server.rtcmOption}
-                    onChange={(e: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          rtcmOption: e.currentTarget.value,
-                        },
-                      })
-                    }
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Nav Msg Select</Text>
+                  <TextInput size="xs" value={config.server.navMsgSelect ?? 'all'}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, navMsgSelect: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
                 </Group>
-
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>L6 Margin</Text>
-                  <NumberInput
-                    size="xs"
-                    value={config.server.l6Margin}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        server: {
-                          ...config.server,
-                          l6Margin: Number(value) || 0,
-                        },
-                      })
-                    }
-                    min={0}
-                    hideControls
-                    style={{ flex: 1 }}
-                  />
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Proxy</Text>
+                  <TextInput size="xs" value={config.server.proxy ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, proxy: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Swap Margin (s)</Text>
+                  <NumberInput size="xs" value={config.server.swapMargin ?? 30}
+                    onChange={(v) => handleConfigChange({ ...config, server: { ...config.server, swapMargin: Number(v) || 0 } })}
+                    min={0} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Start Cmd</Text>
+                  <TextInput size="xs" value={config.server.startCmd ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, startCmd: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Stop Cmd</Text>
+                  <TextInput size="xs" value={config.server.stopCmd ?? ''}
+                    onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, stopCmd: e.currentTarget.value } })}
+                    style={{ flex: 1 }} />
                 </Group>
               </Stack>
             </Stack>
