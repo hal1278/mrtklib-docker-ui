@@ -413,11 +413,17 @@ export function ConversionPanel() {
     };
 
     ws.onclose = () => {
-      wsRef.current = null;
+      // Only clear the ref if this socket is still the current one. Close
+      // events are async, so an older socket can close after a newer socket
+      // has been assigned — clearing unconditionally would orphan the newer
+      // socket (leaving it active) and duplicate output on the next convert.
+      if (wsRef.current === ws) {
+        wsRef.current = null;
+      }
     };
 
     wsRef.current = ws;
-  }, []);
+  }, [fetchPreviews]);
 
   // Cleanup WebSocket on unmount
   useEffect(() => {
