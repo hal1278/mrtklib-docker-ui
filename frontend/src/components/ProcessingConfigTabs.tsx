@@ -2091,29 +2091,30 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   <ComboLabel label="Robust / K0 / K1" style={OPT_LABEL_STYLE}
                     fields={[{ name: 'Robust' }, { name: 'K0' }, { name: 'K1' }]} />
                   <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <Select size="xs" title="Robust (off/igg3)" aria-label="Robust" value={config.positioning.robust}
+                    <Select size="xs" title="Robust (off/igg3)" aria-label="Robust" value={config.positioning.robust ?? 'off'}
                       onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, robust: value } })}
                       data={[{ value: 'off', label: 'OFF' }, { value: 'igg3', label: 'IGG-III' }]}
                       style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Robust K0" aria-label="Robust K0" value={config.positioning.robustK0}
+                    <NumberInput size="xs" title="Robust K0" aria-label="Robust K0" value={config.positioning.robustK0 ?? 1.5}
                       onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK0: Number(v) || 0 } })}
-                      disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Robust K1" aria-label="Robust K1" value={config.positioning.robustK1}
+                      disabled={(config.positioning.robust ?? 'off') === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Robust K1" aria-label="Robust K1" value={config.positioning.robustK1 ?? 4.0}
                       onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK1: Number(v) || 0 } })}
-                      disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
+                      disabled={(config.positioning.robust ?? 'off') === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <ComboLabel label="TDCP / Jump (m)" style={OPT_LABEL_STYLE}
                     fields={[{ name: 'TDCP' }, { name: 'Jump' }]} />
                   <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <Select size="xs" title="TDCP (off/on)" aria-label="TDCP" value={config.positioning.tdcp}
+                    <Select size="xs" title="TDCP (off/on)" aria-label="TDCP" value={config.positioning.tdcp ?? 'off'}
                       onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcp: value } })}
                       data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
                       style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="TDCP Jump (m)" aria-label="TDCP Jump" value={config.positioning.tdcpJump}
+                    <NumberInput size="xs" title="TDCP Jump (m)" aria-label="TDCP Jump" value={config.positioning.tdcpJump ?? 5.0}
                       onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcpJump: Number(v) || 0 } })}
-                      disabled={config.positioning.tdcp === 'off'} decimalScale={1} hideControls style={{ flex: 1, minWidth: 0 }} />
+                      disabled={(config.positioning.tdcp ?? 'off') === 'off'} decimalScale={1} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
               </Stack>
@@ -2172,6 +2173,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     <Select size="xs" title="BeiDou-3 signals" aria-label="BDS-3 signals" value={config.signalSelection.bds3} disabled={useSignals}
                       onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds3: value } })}
                       data={['B1I/B3I', 'B1I/B2a', 'B1I/B3I/B2a']} style={{ flex: 1, minWidth: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
               </Stack>
