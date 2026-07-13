@@ -1486,32 +1486,28 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     onChange={(e) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, enabled: e.currentTarget.checked}})} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="adaptive.iono_forgetting" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.adaptiveFilter.ionoForgetting}
-                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoForgetting: Number(v)}})}
-                    disabled={!isAdaptiveMode}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <ComboLabel label="Iono Forget / Gain" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Forget', metaKey: 'adaptive.iono_forgetting' }, { name: 'Gain' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Iono forgetting factor" aria-label="Iono forgetting factor" value={config.adaptiveFilter.ionoForgetting}
+                      onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoForgetting: Number(v)}})}
+                      disabled={!isAdaptiveMode} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Iono gain" aria-label="Iono gain" value={config.adaptiveFilter.ionoGain}
+                      onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoGain: Number(v)}})}
+                      disabled={!isAdaptiveMode} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Gain</Text>
-                  <NumberInput size="xs" value={config.adaptiveFilter.ionoGain}
-                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, ionoGain: Number(v)}})}
-                    disabled={!isAdaptiveMode}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <OptionLabel metaKey="adaptive.pva_forgetting" style={OPT_LABEL_STYLE} />
-                  <NumberInput size="xs" value={config.adaptiveFilter.pvaForgetting}
-                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaForgetting: Number(v)}})}
-                    disabled={!isAdaptiveMode}
-                    decimalScale={4} hideControls style={{flex:1}} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PVA Gain</Text>
-                  <NumberInput size="xs" value={config.adaptiveFilter.pvaGain}
-                    onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaGain: Number(v)}})}
-                    disabled={!isAdaptiveMode}
-                    decimalScale={4} hideControls style={{flex:1}} />
+                  <ComboLabel label="PVA Forget / Gain" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Forget', metaKey: 'adaptive.pva_forgetting' }, { name: 'Gain' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="PVA forgetting factor" aria-label="PVA forgetting factor" value={config.adaptiveFilter.pvaForgetting}
+                      onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaForgetting: Number(v)}})}
+                      disabled={!isAdaptiveMode} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="PVA gain" aria-label="PVA gain" value={config.adaptiveFilter.pvaGain}
+                      onChange={(v) => handleConfigChange({...config, adaptiveFilter: {...config.adaptiveFilter, pvaGain: Number(v)}})}
+                      disabled={!isAdaptiveMode} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
             </Stack>
@@ -2237,22 +2233,19 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <SectionHeader title="PPP" anchor="ppp" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Clock Bias</Text>
-                  <NumberInput size="xs" value={config.receiver.pppSatClockBias} disabled={!isPPP}
-                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatClockBias: Number(value) || 0 } })}
-                    hideControls style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Phase Bias</Text>
-                  <NumberInput size="xs" value={config.receiver.pppSatPhaseBias} disabled={!isPPP}
-                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatPhaseBias: Number(value) || 0 } })}
-                    hideControls style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Uncorrected Bias</Text>
-                  <NumberInput size="xs" value={config.receiver.uncorrBias} disabled={!isPPP}
-                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, uncorrBias: Number(value) || 0 } })}
-                    hideControls style={{ flex: 1 }} />
+                  <ComboLabel label="Sat Clock / Phase / Uncorr Bias" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Clock' }, { name: 'Phase' }, { name: 'Uncorr' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="PPP Sat Clock Bias" aria-label="PPP Sat Clock Bias" value={config.receiver.pppSatClockBias} disabled={!isPPP}
+                      onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatClockBias: Number(value) || 0 } })}
+                      hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="PPP Sat Phase Bias" aria-label="PPP Sat Phase Bias" value={config.receiver.pppSatPhaseBias} disabled={!isPPP}
+                      onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, pppSatPhaseBias: Number(value) || 0 } })}
+                      hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Uncorrected Bias" aria-label="Uncorrected Bias" value={config.receiver.uncorrBias} disabled={!isPPP}
+                      onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, uncorrBias: Number(value) || 0 } })}
+                      hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Clock Jump</Text>
