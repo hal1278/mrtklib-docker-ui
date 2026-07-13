@@ -115,10 +115,10 @@ class PositioningConfig(BaseModel):
     excluded_satellites: str = ""
     # v0.7.6 additions
     robust: str = "off"
-    robust_k0: float = 0.0
-    robust_k1: float = 0.0
+    robust_k0: float = 1.5   # IGG-III code default (mrtk_rtkpos.c)
+    robust_k1: float = 4.0   # IGG-III code default (mrtk_rtkpos.c)
     tdcp: str = "off"
-    tdcp_jump: float = 0.0
+    tdcp_jump: float = 5.0   # code default (mrtk_spp.c)
     snr_mask: SnrMaskConfig = Field(default_factory=SnrMaskConfig)
     corrections: CorrectionsConfig = Field(default_factory=CorrectionsConfig)
     atmosphere: AtmosphereConfig = Field(default_factory=AtmosphereConfig)

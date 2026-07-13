@@ -2088,36 +2088,33 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ignoreChiError: e.currentTarget.checked } })} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust</Text>
-                  <Select size="xs" value={config.positioning.robust}
-                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, robust: value } })}
-                    data={[{ value: 'off', label: 'OFF' }, { value: 'igg3', label: 'IGG-III' }]}
-                    style={{ flex: 1 }} />
+                  <ComboLabel label="Robust / K0 / K1" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Robust' }, { name: 'K0' }, { name: 'K1' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="Robust (off/igg3)" aria-label="Robust" value={config.positioning.robust}
+                      onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, robust: value } })}
+                      data={[{ value: 'off', label: 'OFF' }, { value: 'igg3', label: 'IGG-III' }]}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Robust K0" aria-label="Robust K0" value={config.positioning.robustK0}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK0: Number(v) || 0 } })}
+                      disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Robust K1" aria-label="Robust K1" value={config.positioning.robustK1}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK1: Number(v) || 0 } })}
+                      disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust K0</Text>
-                  <NumberInput size="xs" value={config.positioning.robustK0}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK0: Number(v) || 0 } })}
-                    disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Robust K1</Text>
-                  <NumberInput size="xs" value={config.positioning.robustK1}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, robustK1: Number(v) || 0 } })}
-                    disabled={config.positioning.robust === 'off'} decimalScale={2} hideControls style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>TDCP</Text>
-                  <Select size="xs" value={config.positioning.tdcp}
-                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcp: value } })}
-                    data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
-                    style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>TDCP Jump (m)</Text>
-                  <NumberInput size="xs" value={config.positioning.tdcpJump}
-                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcpJump: Number(v) || 0 } })}
-                    disabled={config.positioning.tdcp === 'off'} decimalScale={1} hideControls style={{ flex: 1 }} />
+                  <ComboLabel label="TDCP / Jump (m)" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'TDCP' }, { name: 'Jump' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="TDCP (off/on)" aria-label="TDCP" value={config.positioning.tdcp}
+                      onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcp: value } })}
+                      data={[{ value: 'off', label: 'OFF' }, { value: 'on', label: 'ON' }]}
+                      style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="TDCP Jump (m)" aria-label="TDCP Jump" value={config.positioning.tdcpJump}
+                      onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, tdcpJump: Number(v) || 0 } })}
+                      disabled={config.positioning.tdcp === 'off'} decimalScale={1} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
 
@@ -2130,16 +2127,16 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     min={0} decimalScale={1} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Baseline Len (m)</Text>
-                  <NumberInput size="xs" value={config.receiver.baselineLength}
-                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineLength: Number(value) } })}
-                    min={0} decimalScale={1} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Baseline Sigma (m)</Text>
-                  <NumberInput size="xs" value={config.receiver.baselineSigma}
-                    onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineSigma: Number(value) } })}
-                    min={0} decimalScale={4} hideControls disabled={!isRelativeMode} style={{ flex: 1 }} />
+                  <ComboLabel label="Baseline Len / Sigma (m)" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Length' }, { name: 'Sigma' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Baseline Length (m)" aria-label="Baseline Length" value={config.receiver.baselineLength}
+                      onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineLength: Number(value) } })}
+                      min={0} decimalScale={1} hideControls disabled={!isRelativeMode} style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Baseline Sigma (m)" aria-label="Baseline Sigma" value={config.receiver.baselineSigma}
+                      onChange={(value: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, baselineSigma: Number(value) } })}
+                      min={0} decimalScale={4} hideControls disabled={!isRelativeMode} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Time Interpolation</Text>
@@ -2151,34 +2148,31 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <SectionHeader title="Signal Selection" anchor="signals" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>GPS</Text>
-                  <Select size="xs" value={config.signalSelection.gps} disabled={useSignals}
-                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, gps: value } })}
-                    data={['L1/L2', 'L1/L5', 'L1/L2/L5']} style={{ flex: 1 }} />
+                  <ComboLabel label="GPS / QZS / GAL" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'GPS' }, { name: 'QZSS' }, { name: 'Galileo' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="GPS signals" aria-label="GPS signals" value={config.signalSelection.gps} disabled={useSignals}
+                      onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, gps: value } })}
+                      data={['L1/L2', 'L1/L5', 'L1/L2/L5']} style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="QZSS signals" aria-label="QZSS signals" value={config.signalSelection.qzs} disabled={useSignals}
+                      onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, qzs: value } })}
+                      data={['L1/L5', 'L1/L2', 'L1/L5/L2']} style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="Galileo signals" aria-label="Galileo signals" value={config.signalSelection.galileo} disabled={useSignals}
+                      onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, galileo: value } })}
+                      data={['E1/E5a', 'E1/E5b', 'E1/E6', 'E1/E5a/E5b/E6', 'E1/E5a/E6/E5b']} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>QZSS</Text>
-                  <Select size="xs" value={config.signalSelection.qzs} disabled={useSignals}
-                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, qzs: value } })}
-                    data={['L1/L5', 'L1/L2', 'L1/L5/L2']} style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Galileo</Text>
-                  <Select size="xs" value={config.signalSelection.galileo} disabled={useSignals}
-                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, galileo: value } })}
-                    data={['E1/E5a', 'E1/E5b', 'E1/E6', 'E1/E5a/E5b/E6', 'E1/E5a/E6/E5b']} style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>BDS-2</Text>
-                  <Select size="xs" value={config.signalSelection.bds2} disabled={useSignals}
-                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds2: value } })}
-                    data={['B1I/B3I', 'B1I/B2I', 'B1I/B3I/B2I']} style={{ flex: 1 }} />
-                </Group>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>BDS-3</Text>
-                  <Select size="xs" value={config.signalSelection.bds3} disabled={useSignals}
-                    onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds3: value } })}
-                    data={['B1I/B3I', 'B1I/B2a', 'B1I/B3I/B2a']} style={{ flex: 1 }} />
+                  <ComboLabel label="BDS-2 / BDS-3" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'BDS-2' }, { name: 'BDS-3' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="BeiDou-2 signals" aria-label="BDS-2 signals" value={config.signalSelection.bds2} disabled={useSignals}
+                      onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds2: value } })}
+                      data={['B1I/B3I', 'B1I/B2I', 'B1I/B3I/B2I']} style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="BeiDou-3 signals" aria-label="BDS-3 signals" value={config.signalSelection.bds3} disabled={useSignals}
+                      onChange={(value: any) => handleConfigChange({ ...config, signalSelection: { ...config.signalSelection, bds3: value } })}
+                      data={['B1I/B3I', 'B1I/B2a', 'B1I/B3I/B2a']} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
                 </Group>
               </Stack>
             </Stack>

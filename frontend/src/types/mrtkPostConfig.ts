@@ -539,10 +539,10 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
   },
   excludedSatellites: '',
   robust: 'off',
-  robustK0: 0.0,
-  robustK1: 0.0,
+  robustK0: 1.5,   // IGG-III code default (mrtk_rtkpos.c)
+  robustK1: 4.0,   // IGG-III code default (mrtk_rtkpos.c)
   tdcp: 'off',
-  tdcpJump: 0.0,
+  tdcpJump: 5.0,   // code default (mrtk_spp.c: tdcpjump>0 ? : 5.0)
   snrMask: {
     enableRover: false,
     enableBase: false,
