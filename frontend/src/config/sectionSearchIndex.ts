@@ -41,6 +41,14 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'positioning.corrections.tidal_correction', 'positioning.corrections.satellite_antenna',
     'positioning.corrections.receiver_antenna', 'positioning.corrections.phase_windup',
     'positioning.corrections.exclude_eclipse', 'positioning.corrections.raim_fde',
+    // Corrections (bias / frequency / model)
+    'corrections', 'iono compensation', 'iono comp', 'gps frequency', 'qzs frequency',
+    'snr fixed', 'shapiro', 'shapiro delay', 'exclude qzs ref', 'no phase bias adj',
+    'partial ar', 'partial ambiguity',
+    'positioning.corrections.iono_compensation', 'positioning.corrections.gps_frequency',
+    'positioning.corrections.qzs_frequency', 'positioning.corrections.snr_fixed',
+    'positioning.corrections.shapiro_delay', 'positioning.corrections.exclude_qzs_ref',
+    'positioning.corrections.no_phase_bias_adj', 'positioning.corrections.partial_ar',
   ],
 
   ar: [

@@ -1192,6 +1192,50 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 </Group>
               </Stack>
 
+              {/* Corrections ([positioning.corrections] — bias / frequency / model options) */}
+              <SectionHeader title="Corrections" anchor="corrections" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Compensation</Text>
+                  <Select size="xs" value={config.positioning.corrections.ionoCompensation}
+                    onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, ionoCompensation: value } } })}
+                    data={[{ value: 'off', label: 'OFF' }, { value: 'ssr', label: 'SSR' }, { value: 'meas', label: 'Measured' }]}
+                    style={{ flex: 1 }} />
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="GPS / QZS Freq" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'GPS' }, { name: 'QZS' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <Select size="xs" title="GPS frequency" aria-label="GPS frequency" value={config.positioning.corrections.gpsFrequency}
+                      onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, gpsFrequency: value } } })}
+                      data={['l1', 'l1+l2', 'l1+l5', 'l1+l2+l5', 'l1+l5(l2)']} style={{ flex: 1, minWidth: 0 }} />
+                    <Select size="xs" title="QZS frequency" aria-label="QZS frequency" value={config.positioning.corrections.qzsFrequency}
+                      onChange={(value: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, qzsFrequency: value } } })}
+                      data={['l1', 'l1+l2', 'l1+l5', 'l1+l2+l5', 'l1+l5(l2)']} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>SNR Fixed (dB-Hz)</Text>
+                  <NumberInput size="xs" value={config.positioning.corrections.snrFixed}
+                    onChange={(v) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, snrFixed: Number(v) || 0 } } })}
+                    min={0} hideControls style={{ flex: 1 }} />
+                </Group>
+                <Group justify="space-between" gap="md" mt={6}>
+                  <Switch size="xs" label="Partial AR" checked={config.positioning.corrections.partialAr}
+                    onChange={(e: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, partialAr: e.currentTarget.checked } } })}
+                    styles={{ label: { fontSize: '10px' } }} />
+                  <Switch size="xs" label="Shapiro" checked={config.positioning.corrections.shapiroDelay} disabled={!isPPP}
+                    onChange={(e: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, shapiroDelay: e.currentTarget.checked } } })}
+                    styles={{ label: { fontSize: '10px' } }} />
+                  <Switch size="xs" label="Excl QZS Ref" checked={config.positioning.corrections.excludeQzsRef}
+                    onChange={(e: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, excludeQzsRef: e.currentTarget.checked } } })}
+                    styles={{ label: { fontSize: '10px' } }} />
+                  <Switch size="xs" label="No Phase Bias Adj" checked={config.positioning.corrections.noPhaseBiasAdj}
+                    onChange={(e: any) => handleConfigChange({ ...config, positioning: { ...config.positioning, corrections: { ...config.positioning.corrections, noPhaseBiasAdj: e.currentTarget.checked } } })}
+                    styles={{ label: { fontSize: '10px' } }} />
+                </Group>
+              </Stack>
+
               {/* Group C: Satellite Selection */}
               <SectionHeader title="Satellite Selection" anchor="satellites" />
               <Stack gap={6}>
