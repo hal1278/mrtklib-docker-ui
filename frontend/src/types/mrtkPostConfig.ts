@@ -554,7 +554,7 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   glonassAr: 'on',
   bdsAr: 'on',
   qzsAr: 'on',
-  systems: 1,   // SYS_GPS (prcopt_default.arsys); provisional — verify for broader PPP-AR
+  systems: 1,   // SYS_GPS (0x01) — matches prcopt_default.arsys (mrtk_opt.c)
   thresholds: {
     ratio: 3.0,
     ratio1: 0.9999,
