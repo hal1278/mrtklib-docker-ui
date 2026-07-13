@@ -52,7 +52,6 @@ import type {
   SolutionFormat,
   TimeFormat,
   LatLonFormat,
-  Datum,
   HeightType,
   GeoidModel,
   StaticSolutionMode,
@@ -1828,6 +1827,32 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       min={0} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
+                {/* SNR Max / Error (v0.7.6) */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="SNR Max / Error" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'SNR Max' }, { name: 'SNR Error' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="SNR Max (dB-Hz)" aria-label="SNR Max" value={config.kalmanFilter.measurementError.snrMax}
+                      onChange={(v) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, measurementError: {...config.kalmanFilter.measurementError, snrMax: Number(v)}}})}
+                      min={0} decimalScale={1} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="SNR Error" aria-label="SNR Error" value={config.kalmanFilter.measurementError.snrError}
+                      onChange={(v) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, measurementError: {...config.kalmanFilter.measurementError, snrError: Number(v)}}})}
+                      min={0} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
+                {/* Iono / Tropo estimation error (v0.7.6) */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Iono / Tropo Error (m)" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'Iono' }, { name: 'Tropo' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="Ionosphere error (m)" aria-label="Ionosphere error" value={config.kalmanFilter.measurementError.ionosphere}
+                      onChange={(v) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, measurementError: {...config.kalmanFilter.measurementError, ionosphere: Number(v)}}})}
+                      min={0} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="Troposphere error (m)" aria-label="Troposphere error" value={config.kalmanFilter.measurementError.troposphere}
+                      onChange={(v) => handleConfigChange({...config, kalmanFilter: {...config.kalmanFilter, measurementError: {...config.kalmanFilter.measurementError, troposphere: Number(v)}}})}
+                      min={0} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
               </Stack>
 
               {/* Process Noise */}
@@ -2037,11 +2062,24 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                       decimalScale={0} hideControls style={{ flex: 1, minWidth: 0 }} />
                   </Group>
                 </Group>
+                {/* SPP residual / min sats (v0.7.6) */}
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="SPP Res / Min Sats" style={OPT_LABEL_STYLE}
+                    fields={[{ name: 'SPP Residual' }, { name: 'SPP Min Sats' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput size="xs" title="SPP Residual reject threshold" aria-label="SPP Residual" value={config.rejection.sppResidual}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, sppResidual: Number(v)}})}
+                      min={0} decimalScale={4} hideControls style={{ flex: 1, minWidth: 0 }} />
+                    <NumberInput size="xs" title="SPP Min Sats" aria-label="SPP Min Sats" value={config.rejection.sppMinSats}
+                      onChange={(v) => handleConfigChange({...config, rejection: {...config.rejection, sppMinSats: Number(v)}})}
+                      min={0} decimalScale={0} hideControls style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
               </Stack>
             </Stack>
           )}
 
-          {/* ── Receiver section ── */}
+          {/* ── SPP / Relative / Signal Selection / PPP sections (v0.7.6) ── */}
           {activeSection === 'spp' && (
             <Stack gap="xs">
               <SectionHeader title="SPP / Robust QC" anchor="spp" />
@@ -2410,29 +2448,9 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 </Group>
               </Stack>
 
-              {/* Group B: Datum & Geoid */}
+              {/* Group B: Height & Geoid (datum removed in v0.7.6) */}
               <Divider my={4} />
               <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs">
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Datum</Text>
-                  <Select
-                    size="xs"
-                    value={config.output.datum}
-                    onChange={(value: any) =>
-                      handleConfigChange({
-                        ...config,
-                        output: { ...config.output, datum: value as Datum },
-                      })
-                    }
-                    data={[
-                      { value: 'wgs84', label: 'WGS84' },
-                      { value: 'tokyo', label: 'Tokyo' },
-                      { value: 'pz90.11', label: 'PZ-90.11' },
-                    ]}
-                    disabled={!isSolLLH}
-                    style={{ flex: 1 }}
-                  />
-                </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Height</Text>
                   <Select
@@ -2736,17 +2754,17 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               />
 
               <FileInputRow
-                label="Elevation Mask File"
-                value={config.files.elevationMaskFile}
-                onChange={(val) =>
-                  handleConfigChange({
-                    ...config,
-                    files: { ...config.files, elevationMaskFile: val },
-                  })
-                }
-                onBrowse={() => openFileBrowser((path) =>
-                  handleConfigChange({ ...config, files: { ...config.files, elevationMaskFile: path } })
-                )}
+                label="Temp Directory"
+                value={config.files.tempDir}
+                onChange={(val) => handleConfigChange({ ...config, files: { ...config.files, tempDir: val } })}
+                onBrowse={() => openFileBrowser((path) => handleConfigChange({ ...config, files: { ...config.files, tempDir: path } }))}
+              />
+
+              <FileInputRow
+                label="Trace File"
+                value={config.files.trace}
+                onChange={(val) => handleConfigChange({ ...config, files: { ...config.files, trace: val } })}
+                onBrowse={() => openFileBrowser((path) => handleConfigChange({ ...config, files: { ...config.files, trace: path } }))}
               />
 
               <FileInputRow
@@ -2817,6 +2835,25 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 onBrowse={() => openFileBrowser((path) =>
                   handleConfigChange({ ...config, files: { ...config.files, phaseCycle: path } })
                 )}
+              />
+
+              <FileInputRow
+                label="Command File 1"
+                value={config.files.cmdFile1}
+                onChange={(val) => handleConfigChange({ ...config, files: { ...config.files, cmdFile1: val } })}
+                onBrowse={() => openFileBrowser((path) => handleConfigChange({ ...config, files: { ...config.files, cmdFile1: path } }))}
+              />
+              <FileInputRow
+                label="Command File 2"
+                value={config.files.cmdFile2}
+                onChange={(val) => handleConfigChange({ ...config, files: { ...config.files, cmdFile2: val } })}
+                onBrowse={() => openFileBrowser((path) => handleConfigChange({ ...config, files: { ...config.files, cmdFile2: path } }))}
+              />
+              <FileInputRow
+                label="Command File 3"
+                value={config.files.cmdFile3}
+                onChange={(val) => handleConfigChange({ ...config, files: { ...config.files, cmdFile3: val } })}
+                onBrowse={() => openFileBrowser((path) => handleConfigChange({ ...config, files: { ...config.files, cmdFile3: path } }))}
               />
             </Stack>
           )}
