@@ -71,6 +71,10 @@ class SnrMaskConfig(BaseModel):
 class ClasConfig(BaseModel):
     grid_selection_radius: float = 1000.0
     receiver_type: str = ""
+    enhanced_spp_seed: str = "cn0+tdcp"   # v0.7.6
+    l6_merge: int = 0                      # v0.7.6 (clas.resilience)
+    reset_interval: int = 0                # v0.7.6 (clas.resilience)
+    # deprecated in v0.7.6 (kept for import compat; not serialized)
     position_uncertainty_x: float = 10.0
     position_uncertainty_y: float = 10.0
     position_uncertainty_z: float = 10.0
@@ -90,6 +94,7 @@ class CorrectionsConfig(BaseModel):
     gps_frequency: str = "l1+l2"
     qzs_frequency: str = "l1+l2"
     tidal_correction: str = "off"      # off/on/otl/solid+otl-clasgrid+pole
+    snr_fixed: int = 0                 # v0.7.6
 
 
 class AtmosphereConfig(BaseModel):
@@ -108,6 +113,12 @@ class PositioningConfig(BaseModel):
     ephemeris_option: str = "broadcast"
     constellations: ConstellationSelection = Field(default_factory=ConstellationSelection)
     excluded_satellites: str = ""
+    # v0.7.6 additions
+    robust: str = "off"
+    robust_k0: float = 0.0
+    robust_k1: float = 0.0
+    tdcp: str = "off"
+    tdcp_jump: float = 0.0
     snr_mask: SnrMaskConfig = Field(default_factory=SnrMaskConfig)
     corrections: CorrectionsConfig = Field(default_factory=CorrectionsConfig)
     atmosphere: AtmosphereConfig = Field(default_factory=AtmosphereConfig)
@@ -127,6 +138,9 @@ class ARThresholds(BaseModel):
     alpha: str = "0.1%"
     elevation_mask: float = 0.0
     hold_elevation: float = 0.0
+    max_pdop_ar: float = 0.0       # v0.7.6 (0: no limit)
+    max_pdop_hold: float = 0.0     # v0.7.6 (0: no limit)
+    reference_dop: str = "zd"      # v0.7.6 (zd/sd)
 
 
 class ARCounters(BaseModel):
@@ -156,6 +170,7 @@ class AmbiguityResolutionConfig(BaseModel):
     glonass_ar: BoolOrStr = "on"
     bds_ar: BoolOrStr = "on"
     qzs_ar: BoolOrStr = "on"
+    systems: int = 1               # v0.7.6 (PPP-AR system bitmask; SYS_GPS)
     thresholds: ARThresholds = Field(default_factory=ARThresholds)
     counters: ARCounters = Field(default_factory=ARCounters)
     partial_ar: PartialARConfig = Field(default_factory=PartialARConfig)
@@ -174,6 +189,8 @@ class RejectionConfig(BaseModel):
     gdop: float = 30.0
     pseudorange_diff: float = 0.0
     position_error_count: int = 0
+    spp_residual: float = 0.0      # v0.7.6
+    spp_min_sats: int = 7          # v0.7.6
 
 
 # ── [slip_detection] ─────────────────────────────────────────────────────────
@@ -194,6 +211,10 @@ class MeasurementErrorConfig(BaseModel):
     phase_baseline: float = 0.0
     doppler: float = 1.0
     ura_ratio: float = 0.0
+    snr_max: float = 0.0           # v0.7.6
+    snr_error: float = 0.0         # v0.7.6
+    ionosphere: float = 0.0        # v0.7.6 (stats_erriono)
+    troposphere: float = 0.0       # v0.7.6 (stats_errtrop)
 
 
 class InitialStdConfig(BaseModel):
@@ -262,6 +283,7 @@ class ReceiverConfig(BaseModel):
     max_age: float = 30.0
     baseline_length: float = 0.0
     baseline_sigma: float = 0.0
+    clock_jump: bool = False       # v0.7.6 (positioning.ppp.clock_jump)
 
 
 # ── [antenna] ────────────────────────────────────────────────────────────────
@@ -318,12 +340,17 @@ class FilesConfig(BaseModel):
     dcb: str = ""
     eop: str = ""
     ocean_loading: str = ""
-    elevation_mask_file: str = ""
+    elevation_mask_file: str = ""  # deprecated in v0.7.6 (not serialized)
     fcb: str = ""
     bias_sinex: str = ""
     cssr_grid: str = ""
     isb_table: str = ""
     phase_cycle: str = ""
+    temp_dir: str = ""             # v0.7.6
+    trace: str = ""                # v0.7.6
+    cmd_file_1: str = ""           # v0.7.6 (rtkrcv)
+    cmd_file_2: str = ""
+    cmd_file_3: str = ""
 
 
 # ── [server] ─────────────────────────────────────────────────────────────────
@@ -346,6 +373,8 @@ class ServerConfig(BaseModel):
     l6_margin: int = 0
     max_obs_loss: float = 90.0
     float_count: int = 15
+    start_cmd: str = ""            # v0.7.6
+    stop_cmd: str = ""             # v0.7.6
 
 
 # ── Top-level config ─────────────────────────────────────────────────────────
@@ -405,7 +434,7 @@ class MrtkPostService:
             "single": "single", "dgps": "dgps", "kinematic": "kinematic",
             "static": "static", "moving-base": "movingbase", "fixed": "fixed",
             "ppp-kinematic": "ppp-kine", "ppp-static": "ppp-static",
-            "ppp-fixed": "ppp-fixed", "ppp-rtk": "ppp-rtk",
+            "ppp-fixed": "ppp-fixed", "ppp-rtk": "ppp-rtk", "vrs-rtk": "vrs-rtk",
         }
         freq_map = {
             "l1": "l1", "l1+l2": "l1+2", "l1+l2+l5": "l1+2+3",
@@ -491,6 +520,14 @@ class MrtkPostService:
         if c.beidou: systems.append('"BeiDou"')
         if c.irnss: systems.append('"NavIC"')
         lines.append(f"systems             = [{', '.join(systems)}]")
+        # v0.7.6: robust estimation + TDCP
+        if p.robust != "off":
+            lines.append(f"robust              = {_s(p.robust)}")
+            if p.robust_k0: lines.append(f"robust_k0           = {p.robust_k0}")
+            if p.robust_k1: lines.append(f"robust_k1           = {p.robust_k1}")
+        if p.tdcp != "off":
+            lines.append(f"tdcp                = {_s(p.tdcp)}")
+            if p.tdcp_jump: lines.append(f"tdcp_jump           = {p.tdcp_jump}")
         lines.append("")
 
         # ── [positioning.snr_mask] ────────────────────────────────────────
@@ -515,6 +552,9 @@ class MrtkPostService:
         lines.append(f"shapiro_delay      = {_b(cor.shapiro_delay)}")
         lines.append(f"exclude_qzs_ref    = {_b(cor.exclude_qzs_ref)}")
         lines.append(f"no_phase_bias_adj  = {_b(cor.no_phase_bias_adj)}")
+        lines.append(f"gps_frequency      = {_s(cor.gps_frequency)}")
+        lines.append(f"qzs_frequency      = {_s(cor.qzs_frequency)}")
+        if cor.snr_fixed: lines.append(f"snr_fixed          = {cor.snr_fixed}")
         lines.append(f"tidal_correction   = {_s(cor.tidal_correction)}")
         lines.append("")
 
@@ -525,15 +565,70 @@ class MrtkPostService:
         lines.append(f"troposphere = {_s(tropo_map.get(atm.troposphere, 'saas'))}")
         lines.append("")
 
-        # ── [positioning.clas] (only for ppp-rtk) ────────────────────────
-        if p.positioning_mode == "ppp-rtk":
+        # ── [positioning.spp] ─────────────────────────────────────────────
+        rx = config.receiver
+        srv = config.server
+        lines.append("[positioning.spp]")
+        lines.append(f"ignore_chi_error = {_b(rx.ignore_chi_error)}")
+        lines.append("")
+
+        # ── [positioning.relative] ────────────────────────────────────────
+        lines.append("[positioning.relative]")
+        lines.append(f"max_age            = {rx.max_age}")
+        if rx.baseline_length: lines.append(f"baseline_length    = {rx.baseline_length}")
+        if rx.baseline_sigma: lines.append(f"baseline_sigma     = {rx.baseline_sigma}")
+        lines.append(f"time_interpolation = {_b(srv.time_interpolation)}")
+        lines.append("")
+
+        # ── [positioning.ppp] ─────────────────────────────────────────────
+        ppp_lines = []
+        if rx.ppp_sat_clock_bias: ppp_lines.append(f"satellite_clock_bias  = {rx.ppp_sat_clock_bias}")
+        if rx.ppp_sat_phase_bias: ppp_lines.append(f"satellite_phase_bias  = {rx.ppp_sat_phase_bias}")
+        if rx.uncorr_bias: ppp_lines.append(f"drop_uncorrected_code = true")
+        if rx.clock_jump: ppp_lines.append(f"clock_jump            = true")
+        if rx.max_bias_dt: ppp_lines.append(f"max_bias_dt           = {rx.max_bias_dt}")
+        if srv.ppp_option: ppp_lines.append(f"options               = {_s(srv.ppp_option)}")
+        if ppp_lines:
+            lines.append("[positioning.ppp]")
+            lines.extend(ppp_lines)
+            lines.append("")
+
+        # ── [positioning.madoca] ──────────────────────────────────────────
+        lines.append("[positioning.madoca]")
+        lines.append(f"iono_correction = {_b(rx.iono_correction)}")
+        lines.append("")
+
+        # ── [positioning.clas.*] (PPP-RTK / VRS only) ─────────────────────
+        is_clas = p.positioning_mode in ("ppp-rtk", "vrs-rtk")
+        if is_clas:
             cl = p.clas
             lines.append("[positioning.clas]")
-            lines.append(f"grid_selection_radius  = {cl.grid_selection_radius}")
-            lines.append(f"receiver_type          = {_s(cl.receiver_type)}")
-            lines.append(f"position_uncertainty_x = {cl.position_uncertainty_x}")
-            lines.append(f"position_uncertainty_y = {cl.position_uncertainty_y}")
-            lines.append(f"position_uncertainty_z = {cl.position_uncertainty_z}")
+            lines.append(f"grid_selection_radius = {cl.grid_selection_radius}")
+            lines.append(f"receiver_type         = {_s(cl.receiver_type)}")
+            lines.append(f"enhanced_spp_seed     = {_s(cl.enhanced_spp_seed)}")
+            lines.append("")
+
+            lines.append("[positioning.clas.ambiguities]")
+            lines.append(f"phase_shift    = {_s(rx.phase_shift)}")
+            lines.append(f"isb            = {_b(rx.isb)}")
+            if rx.reference_type:
+                lines.append(f"reference_type = {_s(rx.reference_type)}")
+            lines.append("")
+
+            lines.append("[positioning.clas.resilience]")
+            lines.append(f"max_obs_loss   = {srv.max_obs_loss}")
+            lines.append(f"float_count    = {srv.float_count}")
+            if cl.l6_merge: lines.append(f"l6_merge       = {cl.l6_merge}")
+            if cl.reset_interval: lines.append(f"reset_interval = {cl.reset_interval}")
+            lines.append("")
+
+            af = config.adaptive_filter
+            lines.append("[positioning.clas.adaptive_filter]")
+            lines.append(f"enabled         = {_b(af.enabled)}")
+            lines.append(f"iono_forgetting = {af.iono_forgetting}")
+            lines.append(f"iono_gain       = {af.iono_gain}")
+            lines.append(f"pva_forgetting  = {af.pva_forgetting}")
+            lines.append(f"pva_gain        = {af.pva_gain}")
             lines.append("")
 
         # ── [ambiguity_resolution] ────────────────────────────────────────
@@ -546,6 +641,7 @@ class MrtkPostService:
             return _s(v)
 
         lines.append(f"mode       = {_s(ar.mode)}")
+        lines.append(f"gps_ar     = {_b(ar.gps_ar)}")
         lines.append(f"glonass_ar = {_ar_flag(ar.glonass_ar)}")
         lines.append(f"bds_ar     = {_ar_flag(ar.bds_ar)}")
         lines.append(f"qzs_ar     = {_ar_flag(ar.qzs_ar)}")
@@ -556,14 +652,14 @@ class MrtkPostService:
         lines.append("[ambiguity_resolution.thresholds]")
         lines.append(f"ratio          = {t.ratio}")
         lines.append(f"ratio1         = {t.ratio1}")
-        lines.append(f"ratio2         = {t.ratio2}")
-        if t.ratio3: lines.append(f"ratio3         = {t.ratio3}")
-        if t.ratio4: lines.append(f"ratio4         = {t.ratio4}")
         if t.ratio5: lines.append(f"ratio5         = {t.ratio5}")
         if t.ratio6: lines.append(f"ratio6         = {t.ratio6}")
         lines.append(f"alpha          = {_s(alpha_map.get(t.alpha, '0.1%'))}")
         lines.append(f"elevation_mask = {t.elevation_mask}")
         lines.append(f"hold_elevation = {t.hold_elevation}")
+        if t.max_pdop_ar: lines.append(f"max_pdop_ar    = {t.max_pdop_ar}")
+        if t.max_pdop_hold: lines.append(f"max_pdop_hold  = {t.max_pdop_hold}")
+        if t.reference_dop != "zd": lines.append(f"reference_dop  = {_s(t.reference_dop)}")
         lines.append("")
 
         # ── [ambiguity_resolution.counters] ───────────────────────────────
@@ -589,7 +685,6 @@ class MrtkPostService:
         # ── [ambiguity_resolution.hold] ───────────────────────────────────
         lines.append("[ambiguity_resolution.hold]")
         lines.append(f"variance = {ar.hold.variance}")
-        lines.append(f"gain     = {ar.hold.gain}")
         lines.append("")
 
         # ── [rejection] ──────────────────────────────────────────────────
@@ -602,6 +697,8 @@ class MrtkPostService:
         if rej.non_dispersive: lines.append(f"non_dispersive     = {rej.non_dispersive}")
         if rej.hold_chi_square: lines.append(f"hold_chi_square    = {rej.hold_chi_square}")
         if rej.fix_chi_square: lines.append(f"fix_chi_square     = {rej.fix_chi_square}")
+        if rej.spp_residual: lines.append(f"spp_residual       = {rej.spp_residual}")
+        if rej.spp_min_sats != 7: lines.append(f"spp_min_sats       = {rej.spp_min_sats}")
         if rej.pseudorange_diff: lines.append(f"pseudorange_diff   = {rej.pseudorange_diff}")
         if rej.position_error_count: lines.append(f"position_error_count = {rej.position_error_count}")
         lines.append("")
@@ -617,7 +714,6 @@ class MrtkPostService:
         kf = config.kalman_filter
         lines.append("[kalman_filter]")
         lines.append(f"iterations    = {kf.iterations}")
-        lines.append(f"sync_solution = {_b(kf.sync_solution)}")
         lines.append("")
 
         me = kf.measurement_error
@@ -629,6 +725,10 @@ class MrtkPostService:
         lines.append(f"phase_elevation     = {me.phase_elevation}")
         lines.append(f"phase_baseline      = {me.phase_baseline}")
         lines.append(f"doppler             = {me.doppler}")
+        if me.snr_max: lines.append(f"snr_max             = {me.snr_max}")
+        if me.snr_error: lines.append(f"snr_error           = {me.snr_error}")
+        if me.ionosphere: lines.append(f"ionosphere          = {me.ionosphere}")
+        if me.troposphere: lines.append(f"troposphere         = {me.troposphere}")
         if me.ura_ratio: lines.append(f"ura_ratio           = {me.ura_ratio}")
         lines.append("")
 
@@ -655,15 +755,8 @@ class MrtkPostService:
         if pn.ifb: lines.append(f"ifb             = {pn.ifb}")
         lines.append("")
 
-        # ── [adaptive_filter] ────────────────────────────────────────────
-        af = config.adaptive_filter
-        lines.append("[adaptive_filter]")
-        lines.append(f"iono_forgetting = {af.iono_forgetting}")
-        lines.append(f"iono_gain       = {af.iono_gain}")
-        lines.append(f"enabled         = {_b(af.enabled)}")
-        lines.append(f"pva_forgetting  = {af.pva_forgetting}")
-        lines.append(f"pva_gain        = {af.pva_gain}")
-        lines.append("")
+        # NOTE: [adaptive_filter] moved to [positioning.clas.adaptive_filter]
+        # (emitted above, CLAS modes only).
 
         # ── [signals] (only when using frequency mode, not signals list) ─
         if not use_signals:
@@ -676,18 +769,23 @@ class MrtkPostService:
             lines.append(f"bds3    = {_s(sig.bds3)}")
             lines.append("")
 
-        # ── [receiver] ───────────────────────────────────────────────────
-        rx = config.receiver
-        lines.append("[receiver]")
-        lines.append(f"iono_correction = {_b(rx.iono_correction)}")
-        if rx.max_age != 30.0: lines.append(f"max_age         = {rx.max_age}")
-        if rx.baseline_length: lines.append(f"baseline_length = {rx.baseline_length}")
-        if rx.baseline_sigma: lines.append(f"baseline_sigma  = {rx.baseline_sigma}")
-        if rx.isb: lines.append(f"isb             = true")
-        if rx.phase_shift != "off": lines.append(f"phase_shift     = {_s(rx.phase_shift)}")
-        if rx.reference_type:
-            lines.append(f"reference_type  = {_s(rx.reference_type)}")
-        lines.append("")
+        # NOTE: [receiver] dissolved in v0.7.6 — its fields were relocated to
+        # positioning.{spp,relative,ppp,madoca,clas.ambiguities} (emitted above).
+
+        # ── [input.*] (decoding options; emitted only when set) ──────────
+        if srv.rinex_option_1 or srv.rinex_option_2:
+            lines.append("[input.rinex]")
+            if srv.rinex_option_1: lines.append(f"option_1 = {_s(srv.rinex_option_1)}")
+            if srv.rinex_option_2: lines.append(f"option_2 = {_s(srv.rinex_option_2)}")
+            lines.append("")
+        if srv.rtcm_option:
+            lines.append("[input.rtcm]")
+            lines.append(f"options = {_s(srv.rtcm_option)}")
+            lines.append("")
+        if srv.sbas_satellite and srv.sbas_satellite != "0":
+            lines.append("[input.sbas]")
+            lines.append(f"satellite = {srv.sbas_satellite}")
+            lines.append("")
 
         # ── [antenna.rover] ──────────────────────────────────────────────
         ant = config.antenna
@@ -759,34 +857,33 @@ class MrtkPostService:
         lines.append(f"dcb                = {_s(fl.dcb)}")
         lines.append(f"eop                = {_s(fl.eop)}")
         lines.append(f"ocean_loading      = {_s(fl.ocean_loading)}")
-        if fl.elevation_mask_file: lines.append(f"elevation_mask_file = {_s(fl.elevation_mask_file)}")
+        if fl.temp_dir: lines.append(f"temp_dir           = {_s(fl.temp_dir)}")
+        if fl.trace: lines.append(f"trace              = {_s(fl.trace)}")
         if fl.fcb: lines.append(f"fcb                = {_s(fl.fcb)}")
         if fl.bias_sinex: lines.append(f"bias_sinex         = {_s(fl.bias_sinex)}")
         if fl.cssr_grid: lines.append(f"cssr_grid          = {_s(fl.cssr_grid)}")
         if fl.isb_table: lines.append(f"isb_table          = {_s(fl.isb_table)}")
         if fl.phase_cycle: lines.append(f"phase_cycle        = {_s(fl.phase_cycle)}")
+        if fl.cmd_file_1: lines.append(f"cmd_file_1         = {_s(fl.cmd_file_1)}")
+        if fl.cmd_file_2: lines.append(f"cmd_file_2         = {_s(fl.cmd_file_2)}")
+        if fl.cmd_file_3: lines.append(f"cmd_file_3         = {_s(fl.cmd_file_3)}")
         lines.append("")
 
-        # ── [server] ─────────────────────────────────────────────────────
-        srv = config.server
+        # ── [server] (rtkrcv runtime only; v0.7.6 trimmed) ───────────────
+        # rinex/rtcm/sbas → [input.*]; ppp_option → [positioning.ppp];
+        # time_interpolation → [positioning.relative]; max_obs_loss/float_count
+        # → [positioning.clas.resilience]; l6_margin dropped (not in v0.7.6).
         lines.append("[server]")
-        lines.append(f"cycle_ms           = {srv.cycle_ms}")
-        lines.append(f"timeout_ms         = {srv.timeout_ms}")
-        lines.append(f"reconnect_ms       = {srv.reconnect_ms}")
-        lines.append(f"nmea_cycle_ms      = {srv.nmea_cycle_ms}")
-        lines.append(f"buffer_size        = {srv.buffer_size}")
-        lines.append(f"nav_msg_select     = {_s(srv.nav_msg_select)}")
-        lines.append(f"proxy              = {_s(srv.proxy)}")
-        lines.append(f"swap_margin        = {srv.swap_margin}")
-        lines.append(f"time_interpolation = {_b(srv.time_interpolation)}")
-        lines.append(f"sbas_satellite     = {_s(srv.sbas_satellite)}")
-        lines.append(f"rinex_option_1     = {_s(srv.rinex_option_1)}")
-        lines.append(f"rinex_option_2     = {_s(srv.rinex_option_2)}")
-        if srv.ppp_option: lines.append(f"ppp_option         = {_s(srv.ppp_option)}")
-        if srv.rtcm_option: lines.append(f"rtcm_option        = {_s(srv.rtcm_option)}")
-        if srv.l6_margin: lines.append(f"l6_margin          = {srv.l6_margin}")
-        lines.append(f"max_obs_loss       = {srv.max_obs_loss}")
-        lines.append(f"float_count        = {srv.float_count}")
+        lines.append(f"cycle_ms       = {srv.cycle_ms}")
+        lines.append(f"timeout_ms     = {srv.timeout_ms}")
+        lines.append(f"reconnect_ms   = {srv.reconnect_ms}")
+        lines.append(f"nmea_cycle_ms  = {srv.nmea_cycle_ms}")
+        lines.append(f"buffer_size    = {srv.buffer_size}")
+        lines.append(f"nav_msg_select = {_s(srv.nav_msg_select)}")
+        lines.append(f"proxy          = {_s(srv.proxy)}")
+        lines.append(f"swap_margin    = {srv.swap_margin}")
+        if srv.start_cmd: lines.append(f"start_cmd      = {_s(srv.start_cmd)}")
+        if srv.stop_cmd: lines.append(f"stop_cmd       = {_s(srv.stop_cmd)}")
         lines.append("")
 
         return "\n".join(lines)
