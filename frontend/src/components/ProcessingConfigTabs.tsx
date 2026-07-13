@@ -519,10 +519,8 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
       : []),
     { label: 'Positioning', icon: <IconSatellite size={12} />, items: [
         { label: 'Mode', section: 'mode' },
-        { label: 'SPP', section: 'spp' },
-        { label: 'Relative', section: 'relative' },
-        { label: 'Signal Selection', section: 'signals' },
-        { label: 'PPP', section: 'ppp' },
+        { label: 'Method', section: 'method' },
+        { label: 'PPP / MADOCA', section: 'ppp' },
         { label: 'CLAS PPP-RTK/VRS', section: 'clas' },
         { label: 'AR', section: 'ar' },
         { label: 'Kalman Filter', section: 'kf' },
@@ -530,10 +528,10 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
     { label: 'Station', icon: <IconRadar size={12} />, items: [
         { label: 'Antenna', section: 'antenna' },
       ] },
-    { label: 'Output', icon: <IconFileExport size={12} />, items: [
-        { label: 'Format', section: 'format' },
+    { label: 'Misc', icon: <IconFileExport size={12} />, items: [
+        { label: 'Output Format', section: 'format' },
         { label: 'Input Options', section: 'input-options' },
-        { label: 'Files', section: 'files' },
+        { label: 'Data Files', section: 'files' },
         { label: 'Server', section: 'server' },
       ] },
   ];
@@ -1427,7 +1425,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                 </Group>
               </Stack>
 
-              <SectionHeader title="Adaptive Filter" anchor="adaptive-filter" />
+              <SectionHeader title="CLAS Adaptive Filter" anchor="adaptive-filter" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Enabled</Text>
@@ -1754,7 +1752,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
           {/* ── Kalman Filter section ── */}
           {activeSection === 'kf' && (
             <Stack gap="xs">
-              {/* Filter Settings */}
+              <SectionHeader title="Iterations" anchor="kf-iterations" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iterations</Text>
@@ -2080,7 +2078,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
           )}
 
           {/* ── SPP / Relative / Signal Selection / PPP sections (v0.7.6) ── */}
-          {activeSection === 'spp' && (
+          {activeSection === 'method' && (
             <Stack gap="xs">
               <SectionHeader title="SPP / Robust QC" anchor="spp" />
               <Stack gap={6}>
@@ -2122,11 +2120,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     disabled={config.positioning.tdcp === 'off'} decimalScale={1} hideControls style={{ flex: 1 }} />
                 </Group>
               </Stack>
-            </Stack>
-          )}
 
-          {activeSection === 'relative' && (
-            <Stack gap="xs">
               <SectionHeader title="Relative Positioning" anchor="relative" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
@@ -2153,11 +2147,7 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                     onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, timeInterpolation: e.currentTarget.checked } })} />
                 </Group>
               </Stack>
-            </Stack>
-          )}
 
-          {activeSection === 'signals' && (
-            <Stack gap="xs">
               <SectionHeader title="Signal Selection" anchor="signals" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
@@ -2198,11 +2188,6 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
             <Stack gap="xs">
               <SectionHeader title="PPP" anchor="ppp" />
               <Stack gap={6}>
-                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
-                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
-                  <Switch size="xs" checked={config.receiver.ionoCorrection} disabled={!isPPP}
-                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked } })} />
-                </Group>
                 <Group wrap="nowrap" align="center" gap="xs">
                   <Text size="xs" c="dimmed" style={LABEL_STYLE}>PPP Sat Clock Bias</Text>
                   <NumberInput size="xs" value={config.receiver.pppSatClockBias} disabled={!isPPP}
@@ -2237,6 +2222,15 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
                   <TextInput size="xs" value={config.server.pppOption ?? ''} disabled={!isPPP}
                     onChange={(e: any) => handleConfigChange({ ...config, server: { ...config.server, pppOption: e.currentTarget.value } })}
                     style={{ flex: 1 }} />
+                </Group>
+              </Stack>
+
+              <SectionHeader title="MADOCA" anchor="madoca" />
+              <Stack gap={6}>
+                <Group wrap="nowrap" align="center" gap="xs" style={{ minHeight: 30 }}>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Iono Comp.</Text>
+                  <Switch size="xs" checked={config.receiver.ionoCorrection} disabled={!isPPP}
+                    onChange={(e: any) => handleConfigChange({ ...config, receiver: { ...config.receiver, ionoCorrection: e.currentTarget.checked } })} />
                 </Group>
               </Stack>
             </Stack>

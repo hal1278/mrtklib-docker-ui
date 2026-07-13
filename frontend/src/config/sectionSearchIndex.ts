@@ -106,21 +106,19 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'positioning.clas.adaptive_filter.pva_gain',
   ],
 
-  spp: [
+  // Combined section: SPP / Relative / Signal Selection
+  method: [
+    // SPP / Robust QC
     'spp', 'single point', 'robust', 'igg3', 'igg-iii', 'robust k0', 'robust k1',
     'tdcp', 'tdcp jump', 'ignore chi error', 'chi error',
     'positioning.robust', 'positioning.robust_k0', 'positioning.robust_k1',
     'positioning.tdcp', 'positioning.tdcp_jump', 'positioning.spp.ignore_chi_error',
-  ],
-
-  relative: [
+    // Relative
     'relative', 'differential', 'rtk', 'max age', 'baseline length', 'baseline sigma',
     'time interpolation', 'base interpolation',
     'positioning.relative.max_age', 'positioning.relative.baseline_length',
     'positioning.relative.baseline_sigma', 'positioning.relative.time_interpolation',
-  ],
-
-  signals: [
+    // Signal Selection
     'signal selection', 'signals', 'gps', 'qzss', 'galileo', 'beidou', 'bds-2', 'bds-3',
     'l1/l2', 'l1/l5', 'e1/e5a', 'b1i/b3i',
     'signals.gps', 'signals.qzs', 'signals.galileo', 'signals.bds2', 'signals.bds3',
