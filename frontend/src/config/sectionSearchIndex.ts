@@ -157,7 +157,7 @@ const SECTION_SEARCH: Record<string, string[]> = {
     'solution status', 'debug trace', 'trace level',
     'output.solution_format', 'output.output_header', 'output.output_processing_options',
     'output.output_velocity', 'output.time_format', 'output.num_decimals', 'output.lat_lon_format',
-    'output.field_separator', 'output.datum', 'output.height', 'output.geoid_model',
+    'output.field_separator', 'output.height', 'output.geoid_model',
     'output.static_solution_mode', 'output.output_single_on_outage', 'output.output_solution_status',
     'output.debug_trace',
   ],

@@ -74,10 +74,6 @@ class ClasConfig(BaseModel):
     enhanced_spp_seed: str = "cn0+tdcp"   # v0.7.6
     l6_merge: int = 0                      # v0.7.6 (clas.resilience)
     reset_interval: int = 0                # v0.7.6 (clas.resilience)
-    # deprecated in v0.7.6 (kept for import compat; not serialized)
-    position_uncertainty_x: float = 10.0
-    position_uncertainty_y: float = 10.0
-    position_uncertainty_z: float = 10.0
 
 
 class CorrectionsConfig(BaseModel):
@@ -130,9 +126,6 @@ class PositioningConfig(BaseModel):
 class ARThresholds(BaseModel):
     ratio: float = 3.0
     ratio1: float = 0.9999
-    ratio2: float = 0.25
-    ratio3: float = 0.0
-    ratio4: float = 0.0
     ratio5: float = 0.0
     ratio6: float = 0.0
     alpha: str = "0.1%"
@@ -161,7 +154,6 @@ class PartialARConfig(BaseModel):
 
 class ARHoldConfig(BaseModel):
     variance: float = 0.001
-    gain: float = 0.01
 
 
 class AmbiguityResolutionConfig(BaseModel):
@@ -240,7 +232,6 @@ class ProcessNoiseConfig(BaseModel):
 
 class KalmanFilterConfig(BaseModel):
     iterations: int = 1
-    sync_solution: bool = False
     measurement_error: MeasurementErrorConfig = Field(default_factory=MeasurementErrorConfig)
     initial_std: InitialStdConfig = Field(default_factory=InitialStdConfig)
     process_noise: ProcessNoiseConfig = Field(default_factory=ProcessNoiseConfig)
@@ -271,12 +262,10 @@ class SignalSelectionConfig(BaseModel):
 class ReceiverConfig(BaseModel):
     iono_correction: bool = True
     ignore_chi_error: bool = False
-    bds2_bias: bool = False
     ppp_sat_clock_bias: int = 0
     ppp_sat_phase_bias: int = 0
     uncorr_bias: int = 0
     max_bias_dt: int = 0
-    satellite_mode: int = 0
     phase_shift: str = "off"
     isb: bool = False
     reference_type: str = ""
@@ -317,7 +306,6 @@ class OutputConfig(BaseModel):
     num_decimals: int = 3
     lat_lon_format: str = "ddd.ddddddd"
     field_separator: str = ""
-    datum: str = "wgs84"
     height: str = "ellipsoidal"
     geoid_model: str = "internal"
     static_solution_mode: str = "all"
@@ -340,7 +328,6 @@ class FilesConfig(BaseModel):
     dcb: str = ""
     eop: str = ""
     ocean_loading: str = ""
-    elevation_mask_file: str = ""  # deprecated in v0.7.6 (not serialized)
     fcb: str = ""
     bias_sinex: str = ""
     cssr_grid: str = ""

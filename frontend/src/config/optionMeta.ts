@@ -150,21 +150,6 @@ const OPTION_META_DEF = {
     docsAnchor: '#ambiguity-resolution-thresholds',
     modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK),
   },
-  'ar.thresholds.ratio2': {
-    label: 'Ratio 2',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP_RTK),
-  },
-  'ar.thresholds.ratio3': {
-    label: 'Ratio 3',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP_RTK),
-  },
-  'ar.thresholds.ratio4': {
-    label: 'Ratio 4',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK),
-  },
   'ar.thresholds.ratio5': {
     label: 'Ratio 5 (hold chi-sq threshold)',
     description: 'Chi-square threshold for hold-mode outlier validation.',

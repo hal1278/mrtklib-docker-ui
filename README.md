@@ -20,8 +20,9 @@ GNSS positioning capabilities. No compilation required — just
 
 ### Post Processing (`mrtk post`)
 - Sidebar navigation covering all MRTKLIB configuration options
-  (Positioning, AR, Kalman Filter, Adaptive Filter, CLAS PPP-RTK,
-  Environment, Output, Files, Server)
+  (Positioning: Mode / Method / PPP-MADOCA / CLAS PPP-RTK / AR /
+  Kalman Filter; Station; Misc: Output Format / Input Options /
+  Data Files / Server)
 - Full TOML configuration import / export
 - Named preset management (saved to `/workspace/presets/`)
 - Support for all positioning modes: Single, DGPS, Kinematic,

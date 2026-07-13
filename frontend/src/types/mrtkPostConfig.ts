@@ -61,8 +61,6 @@ export type CoordinateFormat = 'deg' | 'dms';
 
 export type LatLonFormat = 'ddd.ddddddd' | 'ddd-mm-ss.sss';
 
-export type Datum = 'wgs84' | 'tokyo' | 'pz90.11';
-
 export type HeightType = 'ellipsoidal' | 'geodetic';
 
 export type GeoidModel = 'internal' | 'egm96' | 'egm08_2.5' | 'egm08_1' | 'gsi2000';
@@ -113,10 +111,6 @@ export interface ClasConfig {
   // v0.7.6: positioning.clas.resilience (max_obs_loss / float_count live in ServerConfig)
   l6Merge: number;               // L6 message merge mode
   resetInterval: number;         // periodic filter reset interval (epochs)
-  // NOTE: positionUncertainty{X,Y,Z} removed in v0.7.6; kept until UI cleanup (no longer serialized)
-  positionUncertaintyX: number;  // m (deprecated)
-  positionUncertaintyY: number;  // m (deprecated)
-  positionUncertaintyZ: number;  // m (deprecated)
 }
 
 export interface CorrectionsConfig {
@@ -180,9 +174,6 @@ export interface PositioningConfig {
 export interface ARThresholds {
   ratio: number;
   ratio1: number;
-  ratio2: number;   // deprecated in v0.7.6 (kept until UI cleanup; not serialized)
-  ratio3: number;   // deprecated in v0.7.6
-  ratio4: number;   // deprecated in v0.7.6
   ratio5: number;
   ratio6: number;
   alpha: ARAlpha;
@@ -212,7 +203,6 @@ export interface PartialARConfig {
 
 export interface ARHoldConfig {
   variance: number;
-  gain: number;
 }
 
 export interface AmbiguityResolutionConfig {
@@ -303,7 +293,6 @@ export interface ProcessNoiseConfig {
 export interface KalmanFilterConfig {
   // [kalman_filter]
   iterations: number;
-  syncSolution: boolean;
 
   // [kalman_filter.measurement_error]
   measurementError: MeasurementErrorConfig;
@@ -340,12 +329,10 @@ export interface SignalSelectionConfig {
 export interface ReceiverConfig {
   ionoCorrection: boolean;
   ignoreChiError: boolean;
-  bds2Bias: boolean;
   pppSatClockBias: number;
   pppSatPhaseBias: number;
   uncorrBias: number;
   maxBiasDt: number;
-  satelliteMode: number;
   phaseShift: PhaseShift;
   isb: boolean;
   referenceType: string;
@@ -386,7 +373,6 @@ export interface OutputConfig {
   numDecimals: number;
   latLonFormat: LatLonFormat;
   fieldSeparator: string;
-  datum: Datum;
   height: HeightType;
   geoidModel: GeoidModel;
   staticSolutionMode: StaticSolutionMode;
@@ -409,7 +395,6 @@ export interface FilesConfig {
   dcb: string;
   eop: string;
   oceanLoading: string;
-  elevationMaskFile: string;  // deprecated in v0.7.6 (kept until UI cleanup; not serialized)
   fcb: string;
   biasSinex: string;
   cssrGrid: string;
@@ -560,9 +545,6 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
     enhancedSppSeed: 'cn0+tdcp',
     l6Merge: 0,
     resetInterval: 0,
-    positionUncertaintyX: 10.0,
-    positionUncertaintyY: 10.0,
-    positionUncertaintyZ: 10.0,
   },
 };
 
@@ -576,9 +558,6 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   thresholds: {
     ratio: 3.0,
     ratio1: 0.9999,
-    ratio2: 0.25,
-    ratio3: 0.0,
-    ratio4: 0.0,
     ratio5: 0.0,
     ratio6: 0.0,
     alpha: '0.1%',
@@ -604,7 +583,6 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   },
   hold: {
     variance: 0.001,
-    gain: 0.01,
   },
 };
 
@@ -629,7 +607,6 @@ export const DEFAULT_SLIP_DETECTION: SlipDetectionConfig = {
 
 export const DEFAULT_KALMAN_FILTER: KalmanFilterConfig = {
   iterations: 1,
-  syncSolution: false,
   measurementError: {
     codePhaseRatioL1: 100.0,
     codePhaseRatioL2: 100.0,
@@ -684,12 +661,10 @@ export const DEFAULT_SIGNAL_SELECTION: SignalSelectionConfig = {
 export const DEFAULT_RECEIVER: ReceiverConfig = {
   ionoCorrection: true,
   ignoreChiError: false,
-  bds2Bias: false,
   pppSatClockBias: 0,
   pppSatPhaseBias: 0,
   uncorrBias: 0,
   maxBiasDt: 0,
-  satelliteMode: 0,
   phaseShift: 'off',
   isb: false,
   referenceType: '',
@@ -727,7 +702,6 @@ export const DEFAULT_OUTPUT: OutputConfig = {
   numDecimals: 3,
   latLonFormat: 'ddd.ddddddd',
   fieldSeparator: '',
-  datum: 'wgs84',
   height: 'ellipsoidal',
   geoidModel: 'internal',
   staticSolutionMode: 'all',
@@ -748,7 +722,6 @@ export const DEFAULT_FILES: FilesConfig = {
   dcb: '',
   eop: '',
   oceanLoading: '',
-  elevationMaskFile: '',
   fcb: '',
   biasSinex: '',
   cssrGrid: '',

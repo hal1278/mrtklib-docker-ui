@@ -229,7 +229,6 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       },
       hold: {
         variance: get(arHold, 'variance', d.ambiguityResolution.hold.variance),
-        gain: get(arHold, 'gain', d.ambiguityResolution.hold.gain),
       },
     },
     rejection: {
@@ -252,7 +251,6 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
     },
     kalmanFilter: {
       iterations: get(kf, 'iterations', d.kalmanFilter.iterations),
-      syncSolution: get(kf, 'sync_solution', d.kalmanFilter.syncSolution),
       measurementError: {
         ...d.kalmanFilter.measurementError,
         codePhaseRatioL1: get(kfMe, 'code_phase_ratio_L1', d.kalmanFilter.measurementError.codePhaseRatioL1),

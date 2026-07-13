@@ -216,12 +216,10 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
     receiver: {
       iono_correction: config.receiver.ionoCorrection,
       ignore_chi_error: config.receiver.ignoreChiError,
-      bds2_bias: config.receiver.bds2Bias,
       ppp_sat_clock_bias: config.receiver.pppSatClockBias,
       ppp_sat_phase_bias: config.receiver.pppSatPhaseBias,
       uncorr_bias: config.receiver.uncorrBias,
       max_bias_dt: config.receiver.maxBiasDt,
-      satellite_mode: config.receiver.satelliteMode,
       phase_shift: config.receiver.phaseShift,
       isb: config.receiver.isb,
       reference_type: config.receiver.referenceType,

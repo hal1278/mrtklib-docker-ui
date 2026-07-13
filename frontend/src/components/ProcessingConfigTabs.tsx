@@ -289,9 +289,6 @@ const SECTION_ANCHORS: Record<string, string> = {
   'kf-process':         '#kalman-filter-process-noise',
   'adaptive-filter':    '#positioning-clas-adaptive-filter',
   'signals':            '#positioning-signal-selection',
-  'receiver':           '#receiver',
-  'ppp-bias':           '#receiver',
-  'sat-mode':           '#receiver',
   'antenna-rover':      '#antenna-rover',
   'antenna-base':       '#antenna-base',
   'output-solution':    '#output',
@@ -1777,21 +1774,10 @@ export function ProcessingConfigPanel({ config, onConfigChange, execution, strea
               <SectionHeader title="Hold" anchor="ar-hold" />
               <Stack gap={6}>
                 <Group wrap="nowrap" align="center" gap="xs">
-                  <ComboLabel label="Variance / Gain" style={OPT_LABEL_STYLE}
-                    fields={[
-                      { name: 'Variance' },
-                      { name: 'Gain' },
-                    ]} />
-                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
-                    <NumberInput size="xs" title="Variance / Gain Variance" aria-label="Hold Variance" value={config.ambiguityResolution.hold.variance}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, variance: Number(value)}}})}
-                      decimalScale={4} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                    <NumberInput size="xs" title="Variance / Gain Gain" aria-label="Hold Gain" value={config.ambiguityResolution.hold.gain}
-                      onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, gain: Number(value)}}})}
-                      decimalScale={4} hideControls
-                      style={{ flex: 1, minWidth: 0 }} />
-                  </Group>
+                  <Text size="xs" c="dimmed" style={LABEL_STYLE}>Variance</Text>
+                  <NumberInput size="xs" value={config.ambiguityResolution.hold.variance}
+                    onChange={(value: any) => handleConfigChange({...config, ambiguityResolution: {...config.ambiguityResolution, hold: {...config.ambiguityResolution.hold, variance: Number(value)}}})}
+                    decimalScale={4} hideControls style={{ flex: 1 }} />
                 </Group>
               </Stack>
             </Stack>
