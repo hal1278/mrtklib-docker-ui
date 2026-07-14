@@ -25,6 +25,7 @@ import { DEFAULT_MRTK_POST_CONFIG } from '../types/mrtkPostConfig';
 import { ProcessingConfigPanel, TomlDrawer } from './ProcessingConfigTabs';
 import { PresetPanel } from './PresetPanel';
 import { ConfigAssistantModal } from './ConfigAssistantModal';
+import { ConfigCollapseButton } from './ConsoleFrame';
 import { tomlToConfig } from '../utils/tomlImport';
 
 interface PostProcessingConfigurationProps {
@@ -50,6 +51,7 @@ interface PostProcessingConfigurationProps {
   onExportConf: () => void;
   onQcPreview: () => void;
   roverFileValid: boolean;
+  onCollapse?: () => void;
 }
 
 export function PostProcessingConfiguration({
@@ -74,9 +76,10 @@ export function PostProcessingConfiguration({
   onExportConf,
   onQcPreview,
   roverFileValid,
+  onCollapse,
 }: PostProcessingConfigurationProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
-    key: 'mrtklib-web-ui-mrtk-post-config-v19',
+    key: 'mrtklib-web-ui-mrtk-post-config-v20',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
   });
 
@@ -138,7 +141,10 @@ export function PostProcessingConfiguration({
       <Stack gap={4}>
         {/* Header: title + status + buttons */}
         <Group justify="space-between">
-          <Title order={6} size="xs">Processing Configuration</Title>
+          <Group gap="xs">
+            {onCollapse && <ConfigCollapseButton onClick={onCollapse} />}
+            <Title order={6} size="xs">Processing Configuration</Title>
+          </Group>
           <Group gap="xs">
             {processStatus !== 'idle' && (
               <Badge color={processStatus === 'running' ? 'green' : processStatus === 'success' ? 'blue' : 'red'} variant="dot" size="sm">

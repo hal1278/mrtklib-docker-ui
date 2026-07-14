@@ -30,3 +30,6 @@ tasks/
 # Docker mounts
 workspace/
 data/
+
+# temp
+tmp/

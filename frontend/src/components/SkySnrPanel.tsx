@@ -220,7 +220,7 @@ export function SkySnrPanel({ satellites, updateTime }: SkySnrPanelProps) {
 
   if (satellites.length === 0) {
     return (
-      <Stack align="center" justify="center" style={{ height: 300 }}>
+      <Stack align="center" justify="center" style={{ height: '100%', minHeight: 120 }}>
         <Text size="xs" c="dimmed">No satellite data</Text>
       </Stack>
     );

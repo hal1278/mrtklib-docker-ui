@@ -2,10 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocalStorage, useDisclosure } from '@mantine/hooks';
 import {
   Card,
-  Grid,
   Stack,
   Select,
-  SimpleGrid,
   Text,
   Title,
   Group,
@@ -17,8 +15,7 @@ import {
   Badge,
   ScrollArea,
   Tabs,
-  SegmentedControl,
-  Box,
+  Chip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -55,6 +52,8 @@ import { PositionScatter, type PositionPoint } from './PositionScatter';
 import { SkySnrPanel, type Satellite } from './SkySnrPanel';
 import { TimeSeriesChart, type TimeSeriesPoint } from './TimeSeriesChart';
 import { MaskedPathInput } from './common/MaskedPathInput';
+import { ConsoleFrame, ConfigCollapseButton } from './ConsoleFrame';
+import { RtMetricsRow } from './RtMetricsRow';
 import { maskLogLine } from '../utils/maskPath';
 
 // ─── Stream editor sub-component ────────────────────────────────────────────
@@ -190,15 +189,30 @@ const OUTPUT_LOG_SLOTS = [
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
+/** Compact live RT status fed to the global bottom status bar. */
+export interface RtLiveStatus {
+  lat: number;
+  lon: number;
+  height: number;
+  quality: number;
+  ns: number;
+  ratio: number;
+  age: number;
+  satsVisible: number;
+}
+
 interface RealTimeProcessingProps {
   onConfigChange?: (config: MrtkPostConfig) => void;
   onNavigateToAiSettings?: () => void;
   aiConfigured?: boolean;
+  configOpen?: boolean;
+  onToggleConfig?: () => void;
+  onLiveStatus?: (status: RtLiveStatus | null) => void;
 }
 
-export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured }: RealTimeProcessingProps) {
+export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig, onLiveStatus }: RealTimeProcessingProps) {
   const [config, setConfig] = useLocalStorage<MrtkPostConfig>({
-    key: 'mrtklib-web-ui-mrtk-run-config-v2',
+    key: 'mrtklib-web-ui-mrtk-run-config-v3',
     defaultValue: DEFAULT_MRTK_POST_CONFIG,
   });
 
@@ -237,7 +251,7 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   const [positionHistory, setPositionHistory] = useState<PositionPoint[]>([]);
   const [timeSeriesHistory, setTimeSeriesHistory] = useState<TimeSeriesPoint[]>([]);
   const [logLines, setLogLines] = useState<string[]>([]);
-  const [chartView, setChartView] = useState<'scatter' | 'series' | 'skysnr'>('scatter');
+  const [chartViews, setChartViews] = useState<string[]>(['scatter']);
   const [satellites, setSatellites] = useState<Satellite[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const logEndRef = useRef<HTMLDivElement | null>(null);
@@ -254,6 +268,25 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logLines]);
+
+  // Feed live status to the global bottom status bar (null clears it on stop).
+  useEffect(() => {
+    if (!onLiveStatus) return;
+    if (!lastPosition) {
+      onLiveStatus(null);
+      return;
+    }
+    onLiveStatus({
+      lat: lastPosition.lat,
+      lon: lastPosition.lon,
+      height: lastPosition.height,
+      quality: lastPosition.quality,
+      ns: lastPosition.ns,
+      ratio: lastPosition.ratio,
+      age: lastPosition.age,
+      satsVisible: satellites.length,
+    });
+  }, [lastPosition, satellites, onLiveStatus]);
 
   // Build backend-compatible streams config
   const buildStreamsPayload = useCallback(() => ({
@@ -382,13 +415,17 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
 
   return (
     <>
-    <Grid gutter="md">
-      {/* Left Column: Configuration */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+    <ConsoleFrame
+      configOpen={configOpen}
+      onToggleConfig={onToggleConfig ?? (() => {})}
+      config={
         <Card withBorder p="xs">
           <Stack gap={4}>
             <Group justify="space-between">
-              <Title order={6} size="xs">Processing Configuration</Title>
+              <Group gap="xs">
+                {onToggleConfig && <ConfigCollapseButton onClick={onToggleConfig} />}
+                <Title order={6} size="xs">Processing Configuration</Title>
+              </Group>
               <Group gap="xs">
                 {runStatus !== 'idle' && (
                   <Badge color={isRunning ? 'green' : runStatus === 'error' ? 'red' : 'gray'} variant="dot" size="sm">
@@ -533,87 +570,13 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
             />
           </Stack>
         </Card>
-      </Grid.Col>
-
-      {/* Right Column: Monitor (always visible) */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+      }
+      workspace={
         <Card withBorder p="xs" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Stack gap={6} style={{ flex: 1, minHeight: 0 }}>
 
-            {/* 1. Live coordinates row */}
-            <SimpleGrid cols={4} spacing="xs">
-              {([
-                { label: 'Latitude', value: lastPosition?.lat.toFixed(8) },
-                { label: 'Longitude', value: lastPosition?.lon.toFixed(8) },
-                { label: 'Height (m)', value: lastPosition?.height.toFixed(3) },
-              ] as const).map((item) => (
-                <div key={item.label}>
-                  <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>{item.label}</Text>
-                  <Text
-                    ff="monospace"
-                    style={{ fontSize: 14, lineHeight: 1.3, color: item.value ? 'var(--color-live, #3b82f6)' : undefined }}
-                    c={item.value ? undefined : 'dimmed'}
-                  >
-                    {item.value ?? '---'}
-                  </Text>
-                </div>
-              ))}
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Quality</Text>
-                <Group gap={4} align="center">
-                  {lastPosition ? (
-                    <Badge
-                      size="sm"
-                      variant="filled"
-                      color={lastPosition.quality === 1 ? 'green' : lastPosition.quality === 2 ? 'yellow' : 'gray'}
-                    >
-                      {lastPosition.quality === 1 ? 'FIX' : lastPosition.quality === 2 ? 'FLOAT' : lastPosition.quality === 5 ? 'SINGLE' : `Q=${lastPosition.quality}`}
-                    </Badge>
-                  ) : (
-                    <Text ff="monospace" c="dimmed" style={{ fontSize: 14, lineHeight: 1.3 }}>---</Text>
-                  )}
-                </Group>
-              </div>
-            </SimpleGrid>
-
-            {/* 2. Quality metrics row */}
-            <SimpleGrid cols={4} spacing="xs">
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>AR Ratio</Text>
-                <Group gap={4} align="center">
-                  <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                    {lastPosition?.ratio.toFixed(1) ?? '---'}
-                  </Text>
-                  {lastPosition && (
-                    <Badge
-                      size="xs"
-                      variant="filled"
-                      color={lastPosition.quality === 1 ? 'green' : lastPosition.quality === 2 ? 'yellow' : 'gray'}
-                    >
-                      {lastPosition.quality === 1 ? 'FIXED' : lastPosition.quality === 2 ? 'FLOAT' : 'SINGLE'}
-                    </Badge>
-                  )}
-                </Group>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Satellites</Text>
-                <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                  {lastPosition?.ns ?? '---'}
-                </Text>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Age (s)</Text>
-                <Text ff="monospace" style={{ fontSize: 14, lineHeight: 1.3, color: lastPosition ? 'var(--color-live, #3b82f6)' : undefined }} c={lastPosition ? undefined : 'dimmed'}>
-                  {lastPosition?.age.toFixed(1) ?? '---'}
-                </Text>
-              </div>
-              <div>
-                <Text c="dimmed" style={{ fontSize: 9, lineHeight: 1.2 }}>Time (GPST)</Text>
-                <Text ff="monospace" c="dimmed" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                  {lastPosition?.timestamp ?? '---'}
-                </Text>
-              </div>
-            </SimpleGrid>
+            {/* 1. Metrics row (Time · Position · Quality · Ratio · Age · Satellites) */}
+            <RtMetricsRow lastPosition={lastPosition} satellites={satellites} />
 
             {/* 3. Tab bar + 4. Chart area */}
             <Tabs defaultValue="chart" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -624,29 +587,38 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
                   <Tabs.Tab value="console" style={{ fontSize: 11 }}>Console</Tabs.Tab>
                   <Tabs.Tab value="trace" style={{ fontSize: 11 }}>Trace</Tabs.Tab>
                 </Tabs.List>
-                <SegmentedControl
-                  size="xs"
-                  value={chartView}
-                  onChange={(v) => setChartView(v as 'scatter' | 'series' | 'skysnr')}
-                  data={[
-                    { label: 'Scatter', value: 'scatter' },
-                    { label: 'Series', value: 'series' },
-                    { label: 'Sky+SNR', value: 'skysnr' },
-                  ]}
-                  styles={{ root: { marginRight: 4 } }}
-                />
+                {/* Multi-select: show one or more charts side by side */}
+                <Chip.Group
+                  multiple
+                  value={chartViews}
+                  onChange={(v) => { if (v.length) setChartViews(v); }}
+                >
+                  <Group gap={6} wrap="nowrap" style={{ marginRight: 4 }}>
+                    <Chip value="scatter" size="xs" variant="light">Map</Chip>
+                    <Chip value="skysnr" size="xs" variant="light">Sky / SNR</Chip>
+                    <Chip value="series" size="xs" variant="light">Time series</Chip>
+                  </Group>
+                </Chip.Group>
               </Group>
 
               <Tabs.Panel value="chart" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
-                {chartView === 'scatter' && (
-                  <PositionScatter points={positionHistory} maxPoints={MAX_HISTORY} />
-                )}
-                {chartView === 'series' && (
-                  <TimeSeriesChart points={timeSeriesHistory} maxPoints={MAX_HISTORY} />
-                )}
-                {chartView === 'skysnr' && (
-                  <SkySnrPanel satellites={satellites} updateTime={lastPosition?.timestamp} />
-                )}
+                <div style={{ display: 'flex', gap: 10, height: '100%', minHeight: 0 }}>
+                  {chartViews.includes('scatter') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <PositionScatter points={positionHistory} maxPoints={MAX_HISTORY} />
+                    </div>
+                  )}
+                  {chartViews.includes('skysnr') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <SkySnrPanel satellites={satellites} updateTime={lastPosition?.timestamp} />
+                    </div>
+                  )}
+                  {chartViews.includes('series') && (
+                    <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      <TimeSeriesChart points={timeSeriesHistory} maxPoints={MAX_HISTORY} />
+                    </div>
+                  )}
+                </div>
               </Tabs.Panel>
 
               <Tabs.Panel value="solution" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
@@ -679,28 +651,10 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
               </Tabs.Panel>
             </Tabs>
 
-            {/* 5. Console strip (always visible) */}
-            <Box
-              style={{
-                height: 72,
-                overflow: 'hidden',
-                backgroundColor: 'var(--app-surface, var(--mantine-color-dark-7))',
-                borderRadius: 4,
-                padding: '4px 8px',
-              }}
-            >
-              <Text c="dimmed" tt="uppercase" style={{ fontSize: 9, lineHeight: 1.2, marginBottom: 2 }}>Console</Text>
-              <Text ff="monospace" c="dimmed" style={{ whiteSpace: 'pre-wrap', fontSize: 9, lineHeight: 1.35 }}>
-                {logLines.length > 0
-                  ? logLines.slice(-4).map(maskLogLine).join('\n')
-                  : 'No log output yet.'}
-              </Text>
-            </Box>
-
           </Stack>
         </Card>
-      </Grid.Col>
-    </Grid>
+      }
+    />
     <TomlDrawer config={config} opened={tomlOpened} onClose={closeToml} streams={{
       'input.rover': streams.input.rover,
       'input.base': { type: streams.input.base.type, path: streams.input.base.path, format: streams.input.base.format },

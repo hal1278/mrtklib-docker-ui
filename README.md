@@ -9,7 +9,7 @@ GNSS positioning capabilities. No compilation required — just
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![React](https://img.shields.io/badge/react-18+-blue.svg)
-![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.6.5-green.svg)
+![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.7.6-green.svg)
 
 > **Status**: v0.1.0-alpha — core features are functional.
 > Known limitations are listed in [Known Issues](#known-issues).
@@ -20,8 +20,9 @@ GNSS positioning capabilities. No compilation required — just
 
 ### Post Processing (`mrtk post`)
 - Sidebar navigation covering all MRTKLIB configuration options
-  (Positioning, AR, Kalman Filter, Adaptive Filter, CLAS PPP-RTK,
-  Environment, Output, Files, Server)
+  (Positioning: Mode / Method / PPP-MADOCA / CLAS PPP-RTK / AR /
+  Kalman Filter; Station; Misc: Output Format / Input Options /
+  Data Files / Server)
 - Full TOML configuration import / export
 - Named preset management (saved to `/workspace/presets/`)
 - Support for all positioning modes: Single, DGPS, Kinematic,

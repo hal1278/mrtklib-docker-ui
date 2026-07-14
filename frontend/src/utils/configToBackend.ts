@@ -12,6 +12,7 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
   return {
     positioning: {
       positioning_mode: p.positioningMode,
+      correction: p.correction,
       frequency: p.frequency,
       signal_mode: p.signalMode,
       signals: p.signals,
@@ -21,6 +22,11 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       ephemeris_option: p.ephemerisOption,
       constellations: p.constellations,
       excluded_satellites: p.excludedSatellites,
+      robust: p.robust,
+      robust_k0: p.robustK0,
+      robust_k1: p.robustK1,
+      tdcp: p.tdcp,
+      tdcp_jump: p.tdcpJump,
       snr_mask: {
         enable_rover: p.snrMask.enableRover,
         enable_base: p.snrMask.enableBase,
@@ -40,6 +46,7 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
         gps_frequency: p.corrections.gpsFrequency,
         qzs_frequency: p.corrections.qzsFrequency,
         tidal_correction: p.corrections.tidalCorrection,
+        snr_fixed: p.corrections.snrFixed,
       },
       atmosphere: {
         ionosphere: p.atmosphere.ionosphere,
@@ -48,9 +55,9 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       clas: {
         grid_selection_radius: p.clas.gridSelectionRadius,
         receiver_type: p.clas.receiverType,
-        position_uncertainty_x: p.clas.positionUncertaintyX,
-        position_uncertainty_y: p.clas.positionUncertaintyY,
-        position_uncertainty_z: p.clas.positionUncertaintyZ,
+        enhanced_spp_seed: p.clas.enhancedSppSeed,
+        l6_merge: p.clas.l6Merge,
+        reset_interval: p.clas.resetInterval,
       },
     },
     ambiguity_resolution: {
@@ -59,17 +66,18 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       glonass_ar: ar.glonassAr,
       bds_ar: ar.bdsAr,
       qzs_ar: ar.qzsAr,
+      systems: ar.systems,
       thresholds: {
         ratio: ar.thresholds.ratio,
         ratio1: ar.thresholds.ratio1,
-        ratio2: ar.thresholds.ratio2,
-        ratio3: ar.thresholds.ratio3,
-        ratio4: ar.thresholds.ratio4,
         ratio5: ar.thresholds.ratio5,
         ratio6: ar.thresholds.ratio6,
         alpha: ar.thresholds.alpha,
         elevation_mask: ar.thresholds.elevationMask,
         hold_elevation: ar.thresholds.holdElevation,
+        max_pdop_ar: ar.thresholds.maxPdopAr,
+        max_pdop_hold: ar.thresholds.maxPdopHold,
+        reference_dop: ar.thresholds.referenceDop,
       },
       counters: {
         lock_count: ar.counters.lockCount,
@@ -87,7 +95,6 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       },
       hold: {
         variance: ar.hold.variance,
-        gain: ar.hold.gain,
       },
     },
     rejection: {
@@ -100,6 +107,8 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       gdop: config.rejection.gdop,
       pseudorange_diff: config.rejection.pseudorangeDiff,
       position_error_count: config.rejection.positionErrorCount,
+      spp_residual: config.rejection.sppResidual,
+      spp_min_sats: config.rejection.sppMinSats,
     },
     slip_detection: {
       threshold: config.slipDetection.threshold,
@@ -107,7 +116,6 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
     },
     kalman_filter: {
       iterations: kf.iterations,
-      sync_solution: kf.syncSolution,
       measurement_error: {
         code_phase_ratio_l1: kf.measurementError.codePhaseRatioL1,
         code_phase_ratio_l2: kf.measurementError.codePhaseRatioL2,
@@ -117,6 +125,10 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
         phase_baseline: kf.measurementError.phaseBaseline,
         doppler: kf.measurementError.doppler,
         ura_ratio: kf.measurementError.uraRatio,
+        snr_max: kf.measurementError.snrMax,
+        snr_error: kf.measurementError.snrError,
+        ionosphere: kf.measurementError.ionosphere,
+        troposphere: kf.measurementError.troposphere,
       },
       initial_std: {
         bias: kf.initialStd.bias,
@@ -163,6 +175,8 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       lat_lon_format: config.output.latLonFormat,
       field_separator: config.output.fieldSeparator,
       output_velocity: config.output.outputVelocity,
+      height: config.output.height,
+      max_solution_std: config.output.maxSolutionStd,
       geoid_model: config.output.geoidModel,
       static_solution_mode: config.output.staticSolutionMode,
       output_single_on_outage: config.output.outputSingleOnOutage,
@@ -180,12 +194,16 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       dcb: config.files.dcb,
       eop: config.files.eop,
       ocean_loading: config.files.oceanLoading,
-      elevation_mask_file: config.files.elevationMaskFile,
       fcb: config.files.fcb,
       bias_sinex: config.files.biasSinex,
       cssr_grid: config.files.cssrGrid,
       isb_table: config.files.isbTable,
       phase_cycle: config.files.phaseCycle,
+      temp_dir: config.files.tempDir,
+      trace: config.files.trace,
+      cmd_file_1: config.files.cmdFile1,
+      cmd_file_2: config.files.cmdFile2,
+      cmd_file_3: config.files.cmdFile3,
     },
     adaptive_filter: {
       enabled: config.adaptiveFilter.enabled,
@@ -198,18 +216,17 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
     receiver: {
       iono_correction: config.receiver.ionoCorrection,
       ignore_chi_error: config.receiver.ignoreChiError,
-      bds2_bias: config.receiver.bds2Bias,
       ppp_sat_clock_bias: config.receiver.pppSatClockBias,
       ppp_sat_phase_bias: config.receiver.pppSatPhaseBias,
       uncorr_bias: config.receiver.uncorrBias,
       max_bias_dt: config.receiver.maxBiasDt,
-      satellite_mode: config.receiver.satelliteMode,
       phase_shift: config.receiver.phaseShift,
       isb: config.receiver.isb,
       reference_type: config.receiver.referenceType,
       max_age: config.receiver.maxAge,
       baseline_length: config.receiver.baselineLength,
       baseline_sigma: config.receiver.baselineSigma,
+      clock_jump: config.receiver.clockJump,
     },
     server: {
       cycle_ms: config.server.cycleMs ?? 10,
@@ -229,6 +246,8 @@ export function configToBackend(config: MrtkPostConfig): Record<string, unknown>
       l6_margin: config.server.l6Margin ?? 0,
       max_obs_loss: config.server.maxObsLoss ?? 90.0,
       float_count: config.server.floatCount ?? 15,
+      start_cmd: config.server.startCmd ?? '',
+      stop_cmd: config.server.stopCmd ?? '',
     },
   };
 }

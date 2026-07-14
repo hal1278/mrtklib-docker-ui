@@ -36,6 +36,20 @@ const OPTION_META_DEF = {
     label: 'Positioning Mode',
     docsAnchor: '#positioning',
   },
+  'positioning.spp.ignore_chi_error': {
+    label: 'Ignore Chi Error',
+    description:
+      'Skip the chi-square test on the single-point (SPP) solution used to ' +
+      'seed the filter. Enable when the SPP chi-square check is too strict.',
+    docsAnchor: '#positioning-spp',
+  },
+  'positioning.correction': {
+    label: 'Correction',
+    description:
+      'SSR/PPP correction provider. PPP: igs, igs-rts, qzs-madoca, gal-has, ' +
+      'bds-b2b. PPP-RTK / VRS-RTK: qzs-clas (CLAS). RTK/relative modes: none.',
+    docsAnchor: '#positioning',
+  },
   'positioning.frequency': {
     label: 'Frequencies',
     description:
@@ -101,6 +115,12 @@ const OPTION_META_DEF = {
     docsAnchor: '#ambiguity-resolution',
     modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK, MODE_SETS.VRS),
   },
+  'ar.gps_ar': {
+    label: 'GPS AR',
+    description: 'Resolve GPS carrier-phase ambiguities (the primary AR system).',
+    docsAnchor: '#ambiguity-resolution',
+    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK, MODE_SETS.VRS),
+  },
   'ar.glonass_ar': {
     label: 'GLONASS AR',
     description: 'GLONASS ambiguity resolution. Requires GLONASS inter-channel bias calibration.',
@@ -135,21 +155,6 @@ const OPTION_META_DEF = {
       'uncertainty exceeds this value.',
     docsAnchor: '#ambiguity-resolution-thresholds',
     modes: modes(MODE_SETS.RTK, MODE_SETS.PPP, MODE_SETS.PPP_RTK),
-  },
-  'ar.thresholds.ratio2': {
-    label: 'Ratio 2',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP_RTK),
-  },
-  'ar.thresholds.ratio3': {
-    label: 'Ratio 3',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK, MODE_SETS.PPP_RTK),
-  },
-  'ar.thresholds.ratio4': {
-    label: 'Ratio 4',
-    docsAnchor: '#ambiguity-resolution-thresholds',
-    modes: modes(MODE_SETS.RTK),
   },
   'ar.thresholds.ratio5': {
     label: 'Ratio 5 (hold chi-sq threshold)',
@@ -350,6 +355,13 @@ const OPTION_META_DEF = {
   'kf.pn.accel_v': {
     label: 'Accel. Noise — Vertical (m/s2)',
     description: 'Vertical acceleration process noise. Active when dynamics = true.',
+    docsAnchor: '#kalman-filter-process-noise',
+  },
+  'kf.pn.position': {
+    label: 'Position (m)',
+    description:
+      'Fallback position process noise (horizontal & vertical combined). ' +
+      'Used when Position H and Position V above are left at 0.',
     docsAnchor: '#kalman-filter-process-noise',
   },
   'kf.pn.iono_max': {
