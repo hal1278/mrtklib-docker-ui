@@ -14,6 +14,7 @@ from typing import Annotated, Any, Optional
 from pydantic import BaseModel, BeforeValidator, Field
 
 from mrtklib_web_ui.services.mask_credentials import mask_log_line
+from mrtklib_web_ui.services.input_staging import remove_stage_dir, stage_paths
 
 
 def _bool_to_onoff(v: Any) -> str:
@@ -898,6 +899,7 @@ class MrtkPostService:
             conf_file.write(conf_content)
             conf_path = conf_file.name
 
+        stage_dir = None
         try:
             cmd = [self.mrtk_bin_path, "post", "-k", conf_path, "-o", job.input_files.output_file]
 
@@ -914,13 +916,21 @@ class MrtkPostService:
                 if job.time_range.interval and job.time_range.interval > 0:
                     cmd.extend(["-ti", str(job.time_range.interval)])
 
-            cmd.append(job.input_files.rover_obs_file)
-            if job.input_files.base_obs_file:
-                cmd.append(job.input_files.base_obs_file)
-            cmd.append(job.input_files.nav_file)
-            for cf in job.input_files.correction_files:
-                if cf.strip():
-                    cmd.append(cf.strip())
+            # Stage compressed inputs that live on read-only mounts (/data,
+            # corrections). mrtk decompresses beside the source, which fails on
+            # a read-only FS, so copy those into a writable temp dir first.
+            rover = job.input_files.rover_obs_file
+            base = job.input_files.base_obs_file
+            nav = job.input_files.nav_file
+            corr = [cf.strip() for cf in job.input_files.correction_files if cf.strip()]
+            staged, stage_dir = stage_paths([rover, base, nav, *corr])
+
+            cmd.append(staged.get(rover, rover))
+            if base:
+                cmd.append(staged.get(base, base))
+            cmd.append(staged.get(nav, nav))
+            for cf in corr:
+                cmd.append(staged.get(cf, cf))
 
             if log_callback:
                 await log_callback(f"[CMD] {' '.join(cmd)}")
@@ -995,3 +1005,4 @@ class MrtkPostService:
                 Path(conf_path).unlink()
             except Exception as e:
                 logger.warning(f"Failed to delete temp config file: {e}")
+            remove_stage_dir(stage_dir)

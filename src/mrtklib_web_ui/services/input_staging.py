@@ -1,0 +1,98 @@
+"""Stage compressed inputs that live on read-only roots.
+
+MRTKLIB's ``rtk_uncompress()`` decompresses a compressed input file
+(``.gz``/``.Z``/``.zip``/``.tar``/Hatanaka ``.??d``/``.crx``) by writing the
+decompressed output *next to the source file* — it does not honour the
+``[files] temp_dir`` option (that option is registered but unused in v0.7.6).
+
+When such an input lives under a read-only mount (``/data`` or the bundled
+corrections root), the shell redirect fails with
+``cannot create <path>: Read-only file system``.
+
+To work around this without touching the read-only mounts or the pinned
+binary, we copy the compressed file into a writable temp directory under
+``/workspace`` and hand mrtk the copied path, so it decompresses beside the
+copy. The temp directory is removed when the job finishes.
+"""
+
+import shutil
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Iterator
+
+from mrtklib_web_ui.paths import CORRECTIONS_ROOT, DATA_ROOT, WORKSPACE_ROOT
+
+# Roots that are mounted read-only (mrtk cannot write decompression output here).
+_READONLY_ROOTS = (DATA_ROOT, CORRECTIONS_ROOT)
+
+# gzip/compress/zip extensions handled by rtk_uncompress (case-insensitive).
+_GZIP_EXTS = {".z", ".gz", ".zip"}
+
+
+def is_compressed(name: str) -> bool:
+    """Return True if ``name`` is a file mrtk would try to decompress.
+
+    Mirrors the extension checks in MRTKLIB ``rtk_uncompress()`` so we stage
+    exactly the files that trigger a write next to the source.
+    """
+    ext = Path(name).suffix  # includes the leading dot, e.g. ".gz"
+    low = ext.lower()
+    if low in _GZIP_EXTS or low in (".tar", ".crx"):
+        return True
+    # Hatanaka-compressed RINEX: ".YYd"/".YYD" (rtk_uncompress: len>3 && p[3] in dD).
+    if len(ext) > 3 and ext[3] in ("d", "D"):
+        return True
+    return False
+
+
+def _under_readonly_root(p: Path) -> bool:
+    resolved = p.resolve()
+    return any(root.resolve() in resolved.parents for root in _READONLY_ROOTS)
+
+
+def _needs_staging(path: str) -> bool:
+    return is_compressed(Path(path).name) and _under_readonly_root(Path(path))
+
+
+def stage_paths(paths: Iterator[str]) -> tuple[dict[str, str], "Path | None"]:
+    """Copy compressed read-only inputs to a fresh writable temp dir.
+
+    Returns ``(mapping, tmpdir)`` where ``mapping`` is ``{original: staged}``
+    for only the files that needed staging (callers substitute via
+    ``mapping.get(p, p)``) and ``tmpdir`` is the created temp directory (or
+    ``None`` if nothing was staged). The caller must pass ``tmpdir`` to
+    :func:`remove_stage_dir` when the job finishes.
+    """
+    mapping: dict[str, str] = {}
+    tmpdir: Path | None = None
+    to_stage = [p for p in paths if p and p.strip() and _needs_staging(p.strip())]
+    if to_stage:
+        WORKSPACE_ROOT.mkdir(parents=True, exist_ok=True)
+        tmpdir = Path(tempfile.mkdtemp(prefix=".mrtk_stage_", dir=str(WORKSPACE_ROOT)))
+        for p in to_stage:
+            src = Path(p.strip())
+            dst = tmpdir / src.name
+            shutil.copy2(src, dst)
+            mapping[p] = str(dst)
+    return mapping, tmpdir
+
+
+def remove_stage_dir(tmpdir: "Path | None") -> None:
+    """Remove a staging temp directory created by :func:`stage_paths`."""
+    if tmpdir is not None:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@contextmanager
+def staged_inputs(paths: Iterator[str]) -> Iterator[dict[str, str]]:
+    """Context-manager form of :func:`stage_paths` that auto-cleans up.
+
+    Yields the ``{original: staged}`` mapping; the temp directory is removed
+    on exit.
+    """
+    mapping, tmpdir = stage_paths(paths)
+    try:
+        yield mapping
+    finally:
+        remove_stage_dir(tmpdir)
