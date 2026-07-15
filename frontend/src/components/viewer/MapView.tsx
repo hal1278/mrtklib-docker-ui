@@ -68,12 +68,18 @@ export function MapView({ data, height }: MapViewProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 
+  // Drop null/invalid solutions at (0, 0, 0) so they don't map to "null island".
+  const validData = useMemo(
+    () => data.filter((e) => !(e.lat === 0 && e.lon === 0 && e.height === 0)),
+    [data],
+  );
+
   // Downsample for rendering performance (Canvas handles ~5000 markers well)
-  const displayData = useMemo(() => downsample(data, 5000), [data]);
+  const displayData = useMemo(() => downsample(validData, 5000), [validData]);
 
   // Default center (Tokyo) if no data
-  const defaultCenter: [number, number] = data.length > 0
-    ? [data[0].lat, data[0].lon]
+  const defaultCenter: [number, number] = validData.length > 0
+    ? [validData[0].lat, validData[0].lon]
     : [35.68, 139.77];
 
   return (
@@ -87,7 +93,7 @@ export function MapView({ data, height }: MapViewProps) {
         attribution={isDark ? TILE_ATTRIBUTIONS.dark : TILE_ATTRIBUTIONS.light}
         url={isDark ? TILE_URLS.dark : TILE_URLS.light}
       />
-      <AutoFitBounds data={data} />
+      <AutoFitBounds data={validData} />
       {displayData.map((epoch, i) => (
         <CircleMarker
           key={i}

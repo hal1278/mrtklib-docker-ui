@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useLocalStorage, useDisclosure } from '@mantine/hooks';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useLocalStorage, useDisclosure, useElementSize } from '@mantine/hooks';
 import {
   Card,
   Stack,
@@ -54,6 +54,7 @@ import { TimeSeriesChart, type TimeSeriesPoint } from './TimeSeriesChart';
 import { MaskedPathInput } from './common/MaskedPathInput';
 import { ConsoleFrame, ConfigCollapseButton } from './ConsoleFrame';
 import { RtMetricsRow } from './RtMetricsRow';
+import { MapView, type PosEpoch } from './viewer';
 import { maskLogLine } from '../utils/maskPath';
 
 // ─── Stream editor sub-component ────────────────────────────────────────────
@@ -260,6 +261,34 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   const wsRef = useRef<WebSocket | null>(null);
   const logEndRef = useRef<HTMLDivElement | null>(null);
   const MAX_HISTORY = 600;
+
+  // Measured height for the live map (leaflet needs an explicit pixel height).
+  const { ref: mapWrapRef, height: mapHeight } = useElementSize();
+
+  // Adapt the RT position history to the viewer's PosEpoch shape so the
+  // shared MapView (real basemap) can render the live track.
+  const mapEpochs = useMemo<PosEpoch[]>(
+    () =>
+      positionHistory.map((p) => {
+        const t = new Date(p.timestamp);
+        const time = isNaN(t.getTime()) ? new Date(0) : t;
+        return {
+          time,
+          timeUnix: time.getTime() / 1000,
+          lat: p.lat,
+          lon: p.lon,
+          height: p.height,
+          Q: p.quality,
+          ns: 0,
+          sdn: 0,
+          sde: 0,
+          sdu: 0,
+          age: 0,
+          ratio: 0,
+        };
+      }),
+    [positionHistory],
+  );
 
   const handleConfigChange = useCallback((newConfig: MrtkPostConfig) => {
     setConfig(newConfig);
@@ -616,7 +645,8 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
                   onChange={(v) => { if (v.length) setChartViews(v); }}
                 >
                   <Group gap={6} wrap="nowrap" style={{ marginRight: 4 }}>
-                    <Chip value="scatter" size="xs" variant="light">Map</Chip>
+                    <Chip value="scatter" size="xs" variant="light">2D</Chip>
+                    <Chip value="map" size="xs" variant="light">Map</Chip>
                     <Chip value="skysnr" size="xs" variant="light">Sky / SNR</Chip>
                     <Chip value="series" size="xs" variant="light">Time series</Chip>
                   </Group>
@@ -628,6 +658,11 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
                   {chartViews.includes('scatter') && (
                     <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
                       <PositionScatter points={positionHistory} maxPoints={MAX_HISTORY} />
+                    </div>
+                  )}
+                  {chartViews.includes('map') && (
+                    <div ref={mapWrapRef} style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                      {mapHeight > 0 && <MapView data={mapEpochs} height={mapHeight} />}
                     </div>
                   )}
                   {chartViews.includes('skysnr') && (
