@@ -36,6 +36,7 @@ import {
   IconCalendar,
 } from '@tabler/icons-react';
 import { FileBrowserModal } from './FileBrowserModal';
+import { ComboLabel } from './common/OptionLabel';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -260,6 +261,18 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
       <Box style={{ flex: 1, minWidth: 0 }}>{children}</Box>
     </Group>
   );
+}
+
+// Split a space-joined "A B C" string into 3 parts (for X/Y/Z, H/E/N inputs).
+function xyz(s: string): [string, string, string] {
+  const p = s.trim() === '' ? [] : s.trim().split(/\s+/);
+  return [p[0] ?? '', p[1] ?? '', p[2] ?? ''];
+}
+// Update one part and re-join, preserving the space-joined string contract.
+function setXyz(s: string, idx: number, val: string): string {
+  const parts = xyz(s);
+  parts[idx] = val;
+  return parts.join(' ').trim();
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -841,36 +854,45 @@ export function ConversionPanel() {
                     styles={{ input: { fontSize: '11px' } }}
                   />
                 </FieldRow>
-                <FieldRow label="Interval">
-                  <NumberInput
-                    size="xs"
-                    value={form.interval}
-                    onChange={v => setForm(prev => ({ ...prev, interval: v === '' ? '' : Number(v) }))}
-                    min={0}
-                    step={0.1}
-                    decimalScale={3}
-                    placeholder="sec"
-                  />
-                </FieldRow>
-                <FieldRow label="Epoch Tolerance">
-                  <NumberInput
-                    size="xs"
-                    value={form.epochTolerance}
-                    onChange={v => setForm(prev => ({ ...prev, epochTolerance: v === '' ? 0.005 : Number(v) }))}
-                    min={0}
-                    step={0.001}
-                    decimalScale={4}
-                  />
-                </FieldRow>
-                <FieldRow label="Time Span">
-                  <NumberInput
-                    size="xs"
-                    value={form.timeSpan}
-                    onChange={v => setForm(prev => ({ ...prev, timeSpan: v === '' ? '' : Number(v) }))}
-                    min={0}
-                    placeholder="sec"
-                  />
-                </FieldRow>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Interval / Tol / Span" style={LABEL_STYLE}
+                    fields={[{ name: 'Interval (s)' }, { name: 'Epoch Tolerance (s)' }, { name: 'Time Span (s)' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <NumberInput
+                      size="xs"
+                      title="Interval"
+                      aria-label="Interval"
+                      value={form.interval}
+                      onChange={v => setForm(prev => ({ ...prev, interval: v === '' ? '' : Number(v) }))}
+                      min={0}
+                      hideControls
+                      placeholder="Interval"
+                      style={{ flex: 1, minWidth: 0 }}
+                    />
+                    <NumberInput
+                      size="xs"
+                      title="Epoch Tolerance"
+                      aria-label="Epoch Tolerance"
+                      value={form.epochTolerance}
+                      onChange={v => setForm(prev => ({ ...prev, epochTolerance: v === '' ? 0.005 : Number(v) }))}
+                      min={0}
+                      hideControls
+                      placeholder="Tol"
+                      style={{ flex: 1, minWidth: 0 }}
+                    />
+                    <NumberInput
+                      size="xs"
+                      title="Time Span"
+                      aria-label="Time Span"
+                      value={form.timeSpan}
+                      onChange={v => setForm(prev => ({ ...prev, timeSpan: v === '' ? '' : Number(v) }))}
+                      min={0}
+                      hideControls
+                      placeholder="Span"
+                      style={{ flex: 1, minWidth: 0 }}
+                    />
+                  </Group>
+                </Group>
               </CollapsibleSection>
 
               {/* Signal Options (collapsible) */}
@@ -884,48 +906,50 @@ export function ConversionPanel() {
                     max={7}
                   />
                 </FieldRow>
-                <FieldRow label="Include Doppler">
+                <Group justify="space-between" gap="md" align="center" mih={30}>
                   <Switch
                     size="xs"
+                    label="Include Doppler"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.includeDoppler}
                     onChange={e => setForm(prev => ({ ...prev, includeDoppler: e.currentTarget.checked }))}
                   />
-                </FieldRow>
-                <FieldRow label="Include SNR">
                   <Switch
                     size="xs"
+                    label="Include SNR"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.includeSnr}
                     onChange={e => setForm(prev => ({ ...prev, includeSnr: e.currentTarget.checked }))}
                   />
-                </FieldRow>
-                <FieldRow label="Iono Correction">
                   <Switch
                     size="xs"
+                    label="Iono Correction"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.ionoCorrection}
                     onChange={e => setForm(prev => ({ ...prev, ionoCorrection: e.currentTarget.checked }))}
                   />
-                </FieldRow>
-                <FieldRow label="Time Correction">
                   <Switch
                     size="xs"
+                    label="Time Correction"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.timeCorrection}
                     onChange={e => setForm(prev => ({ ...prev, timeCorrection: e.currentTarget.checked }))}
                   />
-                </FieldRow>
-                <FieldRow label="Leap Seconds">
                   <Switch
                     size="xs"
+                    label="Leap Seconds"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.leapSeconds}
                     onChange={e => setForm(prev => ({ ...prev, leapSeconds: e.currentTarget.checked }))}
                   />
-                </FieldRow>
-                <FieldRow label="Half-cycle Corr">
                   <Switch
                     size="xs"
+                    label="Half-cycle Corr"
+                    styles={{ label: { fontSize: '10px' } }}
                     checked={form.halfCycleCorr}
                     onChange={e => setForm(prev => ({ ...prev, halfCycleCorr: e.currentTarget.checked }))}
                   />
-                </FieldRow>
+                </Group>
                 <FieldRow label="Exclude Satellites">
                   <TextInput
                     size="xs"
@@ -948,30 +972,44 @@ export function ConversionPanel() {
                 <FieldRow label="Comment">
                   <TextInput size="xs" value={form.comment} onChange={e => setForm(prev => ({ ...prev, comment: e.currentTarget.value }))} />
                 </FieldRow>
-                <FieldRow label="Marker Name">
-                  <TextInput size="xs" value={form.markerName} onChange={e => setForm(prev => ({ ...prev, markerName: e.currentTarget.value }))} />
-                </FieldRow>
-                <FieldRow label="Marker Number">
-                  <TextInput size="xs" value={form.markerNumber} onChange={e => setForm(prev => ({ ...prev, markerNumber: e.currentTarget.value }))} />
-                </FieldRow>
-                <FieldRow label="Marker Type">
-                  <TextInput size="xs" value={form.markerType} onChange={e => setForm(prev => ({ ...prev, markerType: e.currentTarget.value }))} />
-                </FieldRow>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Marker" style={LABEL_STYLE}
+                    fields={[{ name: 'Name' }, { name: 'Number' }, { name: 'Type' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput size="xs" title="Marker Name" aria-label="Marker Name" placeholder="Name" value={form.markerName} onChange={e => setForm(prev => ({ ...prev, markerName: e.currentTarget.value }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="Marker Number" aria-label="Marker Number" placeholder="Number" value={form.markerNumber} onChange={e => setForm(prev => ({ ...prev, markerNumber: e.currentTarget.value }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="Marker Type" aria-label="Marker Type" placeholder="Type" value={form.markerType} onChange={e => setForm(prev => ({ ...prev, markerType: e.currentTarget.value }))} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
                 <FieldRow label="Observer/Agency">
                   <TextInput size="xs" value={form.observerAgency} onChange={e => setForm(prev => ({ ...prev, observerAgency: e.currentTarget.value }))} />
                 </FieldRow>
-                <FieldRow label="Receiver">
-                  <TextInput size="xs" value={form.receiver} onChange={e => setForm(prev => ({ ...prev, receiver: e.currentTarget.value }))} />
-                </FieldRow>
-                <FieldRow label="Antenna">
-                  <TextInput size="xs" value={form.antenna} onChange={e => setForm(prev => ({ ...prev, antenna: e.currentTarget.value }))} />
-                </FieldRow>
-                <FieldRow label="Approx Position">
-                  <TextInput size="xs" value={form.approxPosition} onChange={e => setForm(prev => ({ ...prev, approxPosition: e.currentTarget.value }))} placeholder="X Y Z" />
-                </FieldRow>
-                <FieldRow label="Antenna Delta">
-                  <TextInput size="xs" value={form.antennaDelta} onChange={e => setForm(prev => ({ ...prev, antennaDelta: e.currentTarget.value }))} placeholder="H E N" />
-                </FieldRow>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Receiver / Antenna" style={LABEL_STYLE}
+                    fields={[{ name: 'Receiver' }, { name: 'Antenna' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput size="xs" title="Receiver" aria-label="Receiver" placeholder="Receiver" value={form.receiver} onChange={e => setForm(prev => ({ ...prev, receiver: e.currentTarget.value }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="Antenna" aria-label="Antenna" placeholder="Antenna" value={form.antenna} onChange={e => setForm(prev => ({ ...prev, antenna: e.currentTarget.value }))} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Approx Position" style={LABEL_STYLE}
+                    fields={[{ name: 'X (m)' }, { name: 'Y (m)' }, { name: 'Z (m)' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput size="xs" title="X" aria-label="X" placeholder="X" value={xyz(form.approxPosition)[0]} onChange={e => setForm(prev => ({ ...prev, approxPosition: setXyz(prev.approxPosition, 0, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="Y" aria-label="Y" placeholder="Y" value={xyz(form.approxPosition)[1]} onChange={e => setForm(prev => ({ ...prev, approxPosition: setXyz(prev.approxPosition, 1, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="Z" aria-label="Z" placeholder="Z" value={xyz(form.approxPosition)[2]} onChange={e => setForm(prev => ({ ...prev, approxPosition: setXyz(prev.approxPosition, 2, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
+                <Group wrap="nowrap" align="center" gap="xs">
+                  <ComboLabel label="Antenna Delta" style={LABEL_STYLE}
+                    fields={[{ name: 'H (m)' }, { name: 'E (m)' }, { name: 'N (m)' }]} />
+                  <Group wrap="nowrap" gap={6} style={{ flex: 1, minWidth: 0 }}>
+                    <TextInput size="xs" title="H" aria-label="H" placeholder="H" value={xyz(form.antennaDelta)[0]} onChange={e => setForm(prev => ({ ...prev, antennaDelta: setXyz(prev.antennaDelta, 0, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="E" aria-label="E" placeholder="E" value={xyz(form.antennaDelta)[1]} onChange={e => setForm(prev => ({ ...prev, antennaDelta: setXyz(prev.antennaDelta, 1, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                    <TextInput size="xs" title="N" aria-label="N" placeholder="N" value={xyz(form.antennaDelta)[2]} onChange={e => setForm(prev => ({ ...prev, antennaDelta: setXyz(prev.antennaDelta, 2, e.currentTarget.value) }))} style={{ flex: 1, minWidth: 0 }} />
+                  </Group>
+                </Group>
               </CollapsibleSection>
 
               {/* Debug (collapsible) */}
