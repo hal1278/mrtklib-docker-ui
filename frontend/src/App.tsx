@@ -330,27 +330,32 @@ function PostProcessingRightPanel({
 
         {/* Console tab */}
         <Tabs.Panel value="console" style={{ flex: 1, minHeight: 0 }}>
-          <ScrollArea h={CONTENT_HEIGHT} viewportRef={consoleViewportRef} p="sm">
+          <ScrollArea
+            h={CONTENT_HEIGHT}
+            viewportRef={consoleViewportRef}
+            styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+          >
             {logLines.length === 0 ? (
-              <Text size="sm" c="dimmed" fs="italic" ff="monospace">
+              <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px' }}>
                 Waiting for output...
               </Text>
             ) : (
-              <Code
-                block
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'light-dark(var(--mantine-color-dark-8), var(--mantine-color-green-4))',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  fontSize: '12px',
-                  lineHeight: 1.6,
-                }}
-              >
-                {logLines.map((line, index) => (
-                  <div key={index}>{maskLogLine(line)}</div>
-                ))}
-              </Code>
+              logLines.map((line, index) => (
+                <Text
+                  key={index}
+                  size="xs"
+                  c="gray.4"
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: '11px',
+                    lineHeight: 1.5,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {maskLogLine(line)}
+                </Text>
+              ))
             )}
           </ScrollArea>
         </Tabs.Panel>
@@ -436,43 +441,49 @@ function SolutionView({
     }
   }, [content]);
 
+  const consoleBg = 'var(--mantine-color-dark-8, #1a1b1e)';
+
   if (loading) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="xs" c="dimmed">Loading solution file...</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Loading solution file...</Text>
       </Stack>
     );
   }
 
   if (error) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="xs" c="dimmed" fs="italic" ff="monospace">{error}</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{error}</Text>
       </Stack>
     );
   }
 
   if (!content) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="sm" c="dimmed" fs="italic" ff="monospace">No solution file to display</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>No solution file to display</Text>
       </Stack>
     );
   }
 
   return (
-    <ScrollArea h={maxHeight} viewportRef={viewportRef} p="sm">
-      <Code
-        block
+    <ScrollArea
+      h={maxHeight}
+      viewportRef={viewportRef}
+      styles={{ viewport: { backgroundColor: consoleBg, padding: '8px 12px' } }}
+    >
+      <Text
+        c="gray.4"
         style={{
-          backgroundColor: 'transparent',
+          fontFamily: "'IBM Plex Mono', monospace",
           whiteSpace: 'pre',
           fontSize: '11px',
           lineHeight: 1.5,
         }}
       >
         {content}
-      </Code>
+      </Text>
     </ScrollArea>
   );
 }
@@ -1201,28 +1212,32 @@ function StreamServerPanel() {
 
             {streams.map((stream) => (
               <Tabs.Panel key={stream.id} value={stream.id} style={{ flex: 1, minHeight: 0 }}>
-                <ScrollArea h={CONSOLE_HEIGHT} viewportRef={stream.id === activeStreamId ? consoleViewportRef : undefined} p="sm">
+                <ScrollArea
+                  h={CONSOLE_HEIGHT}
+                  viewportRef={stream.id === activeStreamId ? consoleViewportRef : undefined}
+                  styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+                >
                   {stream.logLines.length === 0 ? (
-                    <Text size="sm" c="dimmed" fs="italic" ff="monospace">
+                    <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px' }}>
                       Waiting for output...
                     </Text>
                   ) : (
-                    <Code
-                      block
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: 'light-dark(var(--mantine-color-dark-8), var(--mantine-color-green-4))',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        fontSize: '11px',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {stream.logLines.map((line, index) => (
-                        <div key={index}>{maskLogLine(line)}</div>
-                      ))}
-                    </Code>
+                    stream.logLines.map((line, index) => (
+                      <Text
+                        key={index}
+                        size="xs"
+                        c="gray.4"
+                        style={{
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontSize: '11px',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {maskLogLine(line)}
+                      </Text>
+                    ))
                   )}
                 </ScrollArea>
               </Tabs.Panel>

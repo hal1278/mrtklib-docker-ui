@@ -644,8 +644,15 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
               </Tabs.Panel>
 
               <Tabs.Panel value="solution" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
-                <ScrollArea h={300}>
-                  <Text ff="monospace" style={{ whiteSpace: 'pre-wrap', fontSize: 10, lineHeight: 1.4 }}>
+                <ScrollArea
+                  h={300}
+                  styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+                >
+                  <Text
+                    c={positionHistory.length > 0 ? 'gray.4' : 'dimmed'}
+                    fs={positionHistory.length > 0 ? undefined : 'italic'}
+                    style={{ fontFamily: "'IBM Plex Mono', monospace", whiteSpace: 'pre-wrap', fontSize: '11px', lineHeight: 1.5, wordBreak: 'break-all' }}
+                  >
                     {positionHistory.length > 0
                       ? positionHistory.map((p, i) =>
                           `${p.timestamp || i}  ${p.lat.toFixed(8)}  ${p.lon.toFixed(8)}  ${p.height.toFixed(3)}  Q=${p.quality}`
@@ -656,17 +663,42 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
               </Tabs.Panel>
 
               <Tabs.Panel value="console" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
-                <ScrollArea h={300}>
-                  <Text ff="monospace" style={{ whiteSpace: 'pre-wrap', fontSize: 10, lineHeight: 1.4 }}>
-                    {logLines.length > 0 ? logLines.map(maskLogLine).join('\n') : 'No log output yet.'}
-                  </Text>
+                <ScrollArea
+                  h={300}
+                  styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+                >
+                  {logLines.length > 0 ? (
+                    logLines.map((line, i) => (
+                      <Text
+                        key={i}
+                        size="xs"
+                        c="gray.4"
+                        style={{
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontSize: '11px',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {maskLogLine(line)}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px' }}>
+                      No log output yet.
+                    </Text>
+                  )}
                   <div ref={logEndRef} />
                 </ScrollArea>
               </Tabs.Panel>
 
               <Tabs.Panel value="trace" style={{ flex: 1, minHeight: 0, paddingTop: 6 }}>
-                <ScrollArea h={300}>
-                  <Text ff="monospace" c="dimmed" style={{ whiteSpace: 'pre-wrap', fontSize: 10, lineHeight: 1.4 }}>
+                <ScrollArea
+                  h={300}
+                  styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+                >
+                  <Text c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", whiteSpace: 'pre-wrap', fontSize: '11px', lineHeight: 1.5 }}>
                     Trace output will appear here when trace level is enabled.
                   </Text>
                 </ScrollArea>
