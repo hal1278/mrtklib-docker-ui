@@ -247,6 +247,10 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   }, [setConfig]);
   const [outputLogCount, setOutputLogCount] = useState(1);
   const [runStatus, setRunStatus] = useState<RunStatus>('idle');
+  // Tracks whether the user currently intends a run to be active (true between
+  // handleStart and handleStop). Updated synchronously so the WebSocket
+  // onmessage closure (created once with empty deps) never reads a stale value.
+  const runIntentRef = useRef(false);
   const [lastPosition, setLastPosition] = useState<PositionUpdate | null>(null);
   const [positionHistory, setPositionHistory] = useState<PositionPoint[]>([]);
   const [timeSeriesHistory, setTimeSeriesHistory] = useState<TimeSeriesPoint[]>([]);
@@ -310,10 +314,24 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'status') {
-          if (msg.server_state === 'run') {
+          // Lifecycle (button state) is driven ONLY by explicit process signals,
+          // never by the per-poll rtkrcv `server_state`. That field reflects the
+          // rtkrcv RTK server *thread* state (run/stop) and can read "stop" while
+          // our managed process is still alive and streaming — using it here was
+          // what flipped the button back to Start the moment solutions appeared.
+          if (msg.running === true) {
+            // Positive confirmation the managed process is up (e.g. WS reconnect
+            // while a run is active).
+            runIntentRef.current = true;
             setRunStatus('running');
-          } else if (msg.server_state === 'stop') {
-            setRunStatus('idle');
+          } else if (msg.running === false) {
+            // Only return to idle on a genuine process exit, or when we are not
+            // intending to run (stale "not running" sent right on WS connect
+            // during startup must be ignored so the button stays on Stop).
+            if (msg.exited || !runIntentRef.current) {
+              runIntentRef.current = false;
+              setRunStatus('idle');
+            }
           }
           if (msg.lat !== undefined) {
             const pos: PositionUpdate = {
@@ -361,6 +379,7 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   }, []);
 
   const handleStart = async () => {
+    runIntentRef.current = true;
     setRunStatus('starting');
     setLogLines(prev => [...prev, '[INFO] Starting mrtk run -s ...']);
     try {
@@ -385,11 +404,13 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
         setRunStatus('running');
         setLogLines(prev => [...prev, `[INFO] ${resp.message}`]);
       } else {
+        runIntentRef.current = false;
         setRunStatus('error');
         setLogLines(prev => [...prev, `[ERROR] ${resp.message}`]);
         disconnectWs();
       }
     } catch (err) {
+      runIntentRef.current = false;
       setRunStatus('error');
       setLogLines(prev => [...prev, `[ERROR] ${err instanceof Error ? err.message : String(err)}`]);
       disconnectWs();
@@ -397,6 +418,7 @@ export function RealTimeProcessing({ onConfigChange, onNavigateToAiSettings, aiC
   };
 
   const handleStop = async () => {
+    runIntentRef.current = false;
     setRunStatus('stopping');
     setLogLines(prev => [...prev, '[INFO] Stopping ...']);
     try {

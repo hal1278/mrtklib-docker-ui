@@ -581,7 +581,13 @@ class MrtkRunService:
                     if self._log_callback:
                         await self._log_callback(f"[INFO] Process no longer running (exit code: {exit_code}), stopping poll")
                     if self._status_callback:
-                        await self._status_callback({"server_state": "stop"})
+                        # `exited` marks a genuine process death so the client
+                        # returns to idle. The per-poll rtkrcv `server_state` is
+                        # deliberately NOT used for lifecycle (it is the RTK
+                        # server thread state, not our process state).
+                        await self._status_callback(
+                            {"server_state": "stop", "running": False, "exited": True}
+                        )
                     break
                 status = await self.get_status()
                 poll_count += 1
