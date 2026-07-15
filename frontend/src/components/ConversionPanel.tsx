@@ -20,6 +20,8 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { DateTimePicker } from '@mantine/dates';
+import dayjs from 'dayjs';
 import {
   IconPlayerPlay,
   IconPlayerStop,
@@ -31,6 +33,7 @@ import {
   IconFolder,
   IconRefresh,
   IconFileCode,
+  IconCalendar,
 } from '@tabler/icons-react';
 import { FileBrowserModal } from './FileBrowserModal';
 
@@ -800,27 +803,42 @@ export function ConversionPanel() {
               {/* Time Range (collapsible) */}
               <CollapsibleSection label="Time Range">
                 <FieldRow label="Time Start">
-                  <TextInput
+                  <DateTimePicker
                     size="xs"
-                    value={form.timeStart}
-                    onChange={e => setForm(prev => ({ ...prev, timeStart: e.currentTarget.value }))}
-                    placeholder="YYYY/MM/DD HH:MM:SS"
+                    valueFormat="YYYY/MM/DD HH:mm:ss"
+                    placeholder="2026/03/28 00:00:00"
+                    clearable
+                    leftSection={<IconCalendar size={14} />}
+                    value={form.timeStart ? dayjs(form.timeStart, 'YYYY/MM/DD HH:mm:ss').toDate() : null}
+                    onChange={date => setForm(prev => ({ ...prev, timeStart: date ? dayjs(date).format('YYYY/MM/DD HH:mm:ss') : '' }))}
+                    style={{ flex: 1 }}
+                    styles={{ input: { fontSize: '11px' } }}
                   />
                 </FieldRow>
                 <FieldRow label="Time End">
-                  <TextInput
+                  <DateTimePicker
                     size="xs"
-                    value={form.timeEnd}
-                    onChange={e => setForm(prev => ({ ...prev, timeEnd: e.currentTarget.value }))}
-                    placeholder="YYYY/MM/DD HH:MM:SS"
+                    valueFormat="YYYY/MM/DD HH:mm:ss"
+                    placeholder="2026/03/28 23:59:59"
+                    clearable
+                    leftSection={<IconCalendar size={14} />}
+                    value={form.timeEnd ? dayjs(form.timeEnd, 'YYYY/MM/DD HH:mm:ss').toDate() : null}
+                    onChange={date => setForm(prev => ({ ...prev, timeEnd: date ? dayjs(date).format('YYYY/MM/DD HH:mm:ss') : '' }))}
+                    style={{ flex: 1 }}
+                    styles={{ input: { fontSize: '11px' } }}
                   />
                 </FieldRow>
                 <FieldRow label="RTCM Ref Time">
-                  <TextInput
+                  <DateTimePicker
                     size="xs"
-                    value={form.rtcmRefTime}
-                    onChange={e => setForm(prev => ({ ...prev, rtcmRefTime: e.currentTarget.value }))}
-                    placeholder="YYYY/MM/DD HH:MM:SS"
+                    valueFormat="YYYY/MM/DD HH:mm:ss"
+                    placeholder="2026/03/28 00:00:00"
+                    clearable
+                    leftSection={<IconCalendar size={14} />}
+                    value={form.rtcmRefTime ? dayjs(form.rtcmRefTime, 'YYYY/MM/DD HH:mm:ss').toDate() : null}
+                    onChange={date => setForm(prev => ({ ...prev, rtcmRefTime: date ? dayjs(date).format('YYYY/MM/DD HH:mm:ss') : '' }))}
+                    style={{ flex: 1 }}
+                    styles={{ input: { fontSize: '11px' } }}
                   />
                 </FieldRow>
                 <FieldRow label="Interval">
