@@ -716,8 +716,8 @@ export function ConversionPanel() {
                     placeholder="/data/raw/receiver.ubx"
                     style={{ flex: 1 }}
                   />
-                  <ActionIcon size="sm" variant="default" onClick={() => openFileBrowser('rawFile', 'data')}>
-                    <IconFolder size={14} />
+                  <ActionIcon variant="filled" color="blue" size="lg" onClick={() => openFileBrowser('rawFile', 'data')}>
+                    <IconFolder size={16} />
                   </ActionIcon>
                 </Group>
               </FieldRow>
@@ -749,8 +749,8 @@ export function ConversionPanel() {
                     placeholder="auto-generated"
                     style={{ flex: 1 }}
                   />
-                  <ActionIcon size="sm" variant="default" onClick={() => openFileBrowser('observationFile', 'workspace')}>
-                    <IconFolder size={14} />
+                  <ActionIcon variant="filled" color="blue" size="lg" onClick={() => openFileBrowser('observationFile', 'workspace')}>
+                    <IconFolder size={16} />
                   </ActionIcon>
                 </Group>
               </FieldRow>
@@ -763,8 +763,8 @@ export function ConversionPanel() {
                     placeholder="auto-generated"
                     style={{ flex: 1 }}
                   />
-                  <ActionIcon size="sm" variant="default" onClick={() => openFileBrowser('navigationFile', 'workspace')}>
-                    <IconFolder size={14} />
+                  <ActionIcon variant="filled" color="blue" size="lg" onClick={() => openFileBrowser('navigationFile', 'workspace')}>
+                    <IconFolder size={16} />
                   </ActionIcon>
                 </Group>
               </FieldRow>
@@ -784,8 +784,8 @@ export function ConversionPanel() {
                     onChange={e => setForm(prev => ({ ...prev, outputDirectory: e.currentTarget.value }))}
                     style={{ flex: 1 }}
                   />
-                  <ActionIcon size="sm" variant="default" onClick={() => openFileBrowser('outputDirectory', 'workspace', true)}>
-                    <IconFolder size={14} />
+                  <ActionIcon variant="filled" color="blue" size="lg" onClick={() => openFileBrowser('outputDirectory', 'workspace', true)}>
+                    <IconFolder size={16} />
                   </ActionIcon>
                 </Group>
               </FieldRow>
