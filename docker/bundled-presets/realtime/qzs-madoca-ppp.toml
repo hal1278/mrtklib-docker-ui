@@ -1,0 +1,223 @@
+# Preset: QZSS MADOCA (PPP-Kinematic)
+# MRTKLIB Configuration (TOML v1.0.0)
+
+[positioning]
+mode                = "ppp-kine"
+correction          = "qzs-madoca"
+frequency           = "l1+2+3+4"
+solution_type       = "forward"
+elevation_mask      = 10.0
+dynamics            = false
+satellite_ephemeris = "brdc+ssrapc"
+excluded_sats       = []
+systems             = ["GPS", "GLONASS", "Galileo", "QZSS", "BeiDou"]
+
+[positioning.snr_mask]
+rover_enabled = false
+base_enabled  = false
+L1            = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+L2            = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+L5            = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+[positioning.corrections]
+satellite_antenna  = false
+receiver_antenna   = true
+phase_windup       = "on"
+exclude_eclipse    = false
+raim_fde           = false
+iono_compensation  = "off"
+partial_ar         = false
+shapiro_delay      = false
+exclude_qzs_ref    = false
+no_phase_bias_adj  = false
+gps_frequency      = "l1+l2"
+qzs_frequency      = "l1+l2"
+tidal_correction   = "on"
+
+[positioning.atmosphere]
+ionosphere  = "est-stec"
+troposphere = "est-ztd"
+
+[positioning.spp]
+ignore_chi_error = false
+
+[positioning.relative]
+max_age            = 30.0
+time_interpolation = false
+
+[positioning.madoca]
+iono_correction = true
+
+[ambiguity_resolution]
+mode       = "continuous"
+gps_ar     = true
+glonass_ar = true
+bds_ar     = true
+qzs_ar     = true
+
+[ambiguity_resolution.thresholds]
+ratio          = 1.5
+ratio1         = 1.5
+alpha          = "0.1%"
+elevation_mask = 15.0
+hold_elevation = 0.0
+
+[ambiguity_resolution.counters]
+lock_count     = 0
+min_fix        = 600
+max_iterations = 10
+out_count      = 5
+
+[ambiguity_resolution.partial_ar]
+min_fix_sats      = 4
+ar_filter         = false
+
+[ambiguity_resolution.hold]
+variance = 0.001
+
+[rejection]
+innovation         = 50.0
+gdop               = 30.0
+
+[slip_detection]
+threshold = 0.15
+
+[kalman_filter]
+iterations    = 1
+
+[kalman_filter.measurement_error]
+code_phase_ratio_L1 = 300.0
+code_phase_ratio_L2 = 300.0
+code_phase_ratio_L5 = 100.0
+phase               = 0.003
+phase_elevation     = 0.003
+phase_baseline      = 0.0
+doppler             = 1.0
+
+[kalman_filter.initial_std]
+bias        = 30.0
+ionosphere  = 0.03
+troposphere = 0.3
+
+[kalman_filter.process_noise]
+accel_h         = 1.0
+accel_v         = 0.1
+position_h      = 0.0
+position_v      = 0.0
+position        = 0.0
+bias            = 1.00e-04
+ionosphere      = 0.01
+iono_max        = 0.0
+troposphere     = 1.00e-04
+iono_time_const = 0.0
+clock_stability = 5.00e-12
+ifb             = 1e-05
+
+[signals]
+gps     = "L1/L2/L5"
+qzs     = "L1/L5/L2"
+galileo = "E1/E5a/E5b/E6"
+bds2    = "B1I/B3I/B2I"
+bds3    = "B1I/B3I/B2a"
+
+[antenna.rover]
+position_type = "single"
+position_1    = 0.0
+position_2    = 0.0
+position_3    = 0.0
+type          = "*"
+delta_e       = 0.0
+delta_n       = 0.0
+delta_u       = 0.0
+
+[antenna.base]
+position_type      = "llh"
+position_1         = 90.0
+position_2         = 0.0
+position_3         = -6335367.6285
+type               = ""
+delta_e            = 0.0
+delta_n            = 0.0
+delta_u            = 0.0
+max_average_epochs = 0
+init_reset         = false
+
+[output]
+format            = "llh"
+header            = true
+options           = true
+velocity          = false
+time_system       = "gpst"
+time_format       = "hms"
+time_decimals     = 3
+coordinate_format = "deg"
+field_separator   = ""
+single_output     = false
+max_solution_std  = 0.0
+height_type       = "ellipsoidal"
+geoid_model       = "internal"
+static_solution   = "all"
+nmea_interval_1   = 0.0
+nmea_interval_2   = 0.0
+solution_status   = "off"
+
+[files]
+satellite_atx      = "/opt/mrtklib/corrections/madoca/igs20.atx"
+receiver_atx       = "/opt/mrtklib/corrections/madoca/igs20.atx"
+station_pos        = ""
+geoid              = ""
+ionosphere         = ""
+dcb                = ""
+eop                = ""
+ocean_loading      = ""
+
+[server]
+cycle_ms       = 10
+timeout_ms     = 10000
+reconnect_ms   = 10000
+nmea_cycle_ms  = 5000
+buffer_size    = 32768
+nav_msg_select = "all"
+proxy          = ""
+swap_margin    = 30
+
+
+[streams.input.rover]
+type   = ""
+path   = ""
+format = ""
+
+[streams.input.base]
+type   = "off"
+path   = ""
+format = ""
+nmeareq = false
+nmealat = 0.0
+nmealon = 0.0
+
+[streams.input.correction]
+type   = "off"
+path   = ""
+format = ""
+
+[streams.output.stream1]
+type   = "off"
+path   = ""
+format = ""
+
+[streams.output.stream2]
+type   = "off"
+path   = ""
+format = ""
+
+[streams.log.stream1]
+type   = "off"
+path   = ""
+
+[streams.log.stream2]
+type   = "off"
+path   = ""
+
+[streams.log.stream3]
+type   = "off"
+path   = ""
