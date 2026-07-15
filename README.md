@@ -8,10 +8,10 @@ GNSS positioning capabilities. No compilation required — just
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![React](https://img.shields.io/badge/react-18+-blue.svg)
+![React](https://img.shields.io/badge/react-19-blue.svg)
 ![MRTKLIB](https://img.shields.io/badge/MRTKLIB-0.7.6-green.svg)
 
-> **Status**: v0.1.0-alpha — core features are functional.
+> **Status**: v0.3.0-alpha — core features are functional.
 > Known limitations are listed in [Known Issues](#known-issues).
 
 ![MRTKLIB Web UI Dashboard](https://raw.githubusercontent.com/h-shiono/mrtklib-docker-ui/main/docs/screenshot.png)
@@ -28,12 +28,17 @@ GNSS positioning capabilities. No compilation required — just
 - Support for all positioning modes: Single, DGPS, Kinematic,
   Static, PPP-Kinematic, PPP-Static, PPP-AR, CLAS PPP-RTK,
   MADOCA PPP, VRS-RTK
+- Result visualization: 2D E/N scatter, interactive basemap (Leaflet),
+  and position / quality charts — reads **LLH, XYZ-ECEF, and NMEA-0183**
+  solution outputs (auto-detected)
 
 ### Real-Time Positioning (`mrtk run`)
 - Live position display (Lat / Lon / Height / AR Ratio /
   Satellites / Age / GPST)
 - Fix quality badges: FIXED / FLOAT / SINGLE color-coded
-- Position scatter plot (E/N, 1:1 aspect ratio, quality colors)
+- **2D** E/N scatter (1:1 aspect ratio, quality colors) and a live
+  **Map** view on a real basemap (Leaflet), shown individually or
+  side by side
 - Time series chart
 - Sky plot + SNR bar chart (per-constellation color coding,
   used/unused satellite highlighting)
@@ -102,10 +107,10 @@ Images are published for both `linux/amd64` and `linux/arm64`
 1. **Pull the image**
    ```bash
    # Docker Hub
-   docker pull hatognss/mrtklib-docker-ui:0.1.0-alpha
+   docker pull hatognss/mrtklib-docker-ui:0.3.0-alpha
 
    # or GitHub Container Registry
-   docker pull ghcr.io/h-shiono/mrtklib-docker-ui:0.1.0-alpha
+   docker pull ghcr.io/h-shiono/mrtklib-docker-ui:0.3.0-alpha
    ```
 
 2. **Prepare host directories**
@@ -120,7 +125,7 @@ Images are published for both `linux/amd64` and `linux/arm64`
      -p 8080:8000 \
      -v "$(pwd)/workspace:/workspace:rw" \
      -v "$(pwd)/data:/data:ro" \
-     hatognss/mrtklib-docker-ui:0.1.0-alpha
+     hatognss/mrtklib-docker-ui:0.3.0-alpha
    ```
 
 4. **Open the UI** at <http://localhost:8080>
@@ -231,10 +236,10 @@ QZSS L6D/L6E files require no authentication.
 - **Data Validation**: Pydantic v2
 
 #### Frontend
-- **Framework**: React 18 + TypeScript
+- **Framework**: React 19 + TypeScript
 - **Build Tool**: Vite
-- **UI Library**: Mantine v7
-- **Charts**: Chart.js, uPlot, Recharts
+- **UI Library**: Mantine v8
+- **Charts**: Chart.js, uPlot, Recharts; Leaflet for the map view
 - **Typography**: IBM Plex Sans + IBM Plex Mono
 
 #### Deployment
@@ -308,9 +313,9 @@ surface orphan state in its UI.
 
 | Version | Description |
 |---------|-------------|
-| **v0.1.0-alpha** (current) | Core UI for all `mrtk` subcommands, presets, TOML I/O, Monitor tab |
-| **v0.2.0** | Configuration reference full verification, template presets, coordinate converter, Monitor Sky+SNR |
-| **v0.3.0** | IGS/GSI downloader (auth), GitHub Container Registry publish |
+| **v0.1.x-alpha** | Core UI for all `mrtk` subcommands, presets, TOML I/O, Monitor tab |
+| **v0.2.x-alpha** | Template presets, GNSS time converter, Monitor Sky+SNR, IGS/GSI downloader, GHCR/Docker Hub publish |
+| **v0.3.0-alpha** (current) | MRTKLIB 0.7.6 config migration, console redesign, CLAS pipeline, RINEX Converter overhaul, unified dark consoles, XYZ-ECEF / NMEA-0183 result views, live basemap map |
 
 ---
 
@@ -337,9 +342,8 @@ Bug reports and feedback are very welcome — please
   not been exhaustively verified
 - **RINEX preview**: implemented but not tested across all
   receiver formats
-- **Monitor tab Sky+SNR**: not yet implemented (planned for v0.2.0)
-- **Coordinate converter**: not yet implemented (planned for v0.2.0)
-- **Template presets**: not yet implemented (planned for v0.2.0)
+- **CLAS Pipeline**: uses a single bidirectional serial port; hardware
+  passthrough validated only with the mosaic-G5 preset
 
 ### Platform notes
 
