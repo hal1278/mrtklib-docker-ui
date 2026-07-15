@@ -23,8 +23,6 @@ class PipelineStartRequest(BaseModel):
     receiver_id: str = Field(examples=["septentrio-mosaic-g5"])
     input_device: str = Field(examples=["/dev/ttyUSB0"])
     input_baud: int = Field(default=115200, gt=0)
-    output_device: str = Field(examples=["/dev/ttyUSB1"])
-    output_baud: int = Field(default=115200, gt=0)
     bridge_port: int = Field(default=DEFAULT_BRIDGE_PORT, gt=1024, lt=65536)
     sbf_record_path: str | None = Field(
         default=None,
@@ -76,8 +74,6 @@ async def start_pipeline(req: PipelineStartRequest) -> PipelineStatusResponse:
         receiver_id=req.receiver_id,
         input_device=req.input_device,
         input_baud=req.input_baud,
-        output_device=req.output_device,
-        output_baud=req.output_baud,
         bridge_port=req.bridge_port,
         sbf_record_path=req.sbf_record_path,
     )

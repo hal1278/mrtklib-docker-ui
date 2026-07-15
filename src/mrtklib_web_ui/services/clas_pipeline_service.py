@@ -1,15 +1,21 @@
 """CLAS pipeline orchestrator — wires `mrtk relay` and `mrtk cssr2rtcm3`.
 
-Topology:
+Topology (single bidirectional serial port):
 
-    receiver Serial#1 (SBF + L6) ──► mrtk relay ──► tcpsvr://localhost:PORT#sbf
-                                                          │
-                                                          ├──► mrtk cssr2rtcm3
-                                                          │       │
-                                                          │       ▼
-                                                          │   receiver Serial#2 (RTCM3)
-                                                          │
-                                                          └──► SBF PVT sniffer (UI viz)
+    receiver Serial (SBF + L6 out / RTCM3 in) ◄──► mrtk relay ◄──► tcpsvr://localhost:PORT
+                                                                        │  ▲
+                                                                RTCM3   │  │  SBF
+                                                                        ▼  │
+                                                                   mrtk cssr2rtcm3
+                                                                   (in + out on tcpcli)
+                                                                        │
+                                                                        └──► SBF PVT sniffer (UI viz)
+
+The relay runs with `-b 1` (relay-back): bytes it receives on the TCP
+server — the RTCM3 that cssr2rtcm3 writes back to the same port — are fed
+back into the serial input, so a single serial port carries both the SBF
+uplink and the RTCM3 downlink. This replaces the older two-port topology
+(one serial port for SBF in, a second for RTCM3 out).
 
 The service starts the two processes in order, waits briefly for the relay
 to bind its TCP server, then attaches the SBF sniffer. If either process
@@ -66,8 +72,6 @@ class PipelineConfig:
     receiver_id: str
     input_device: str       # e.g. /dev/serial/by-id/usb-Septentrio_...
     input_baud: int
-    output_device: str
-    output_baud: int
     bridge_port: int = DEFAULT_BRIDGE_PORT
     # Optional: tee the raw SBF stream into a file under /workspace.
     # `mrtk relay` interprets %Y / %m / %d / %h / %M / %S in file paths.
@@ -235,19 +239,6 @@ class ClasPipelineService:
                 state=PipelineState.ERROR, error_message=err
             )
             return self._status
-        ok, err = _device_accessible(config.output_device, allow_url=False)
-        if not ok:
-            self._status = PipelineStatus(
-                state=PipelineState.ERROR, error_message=err
-            )
-            return self._status
-
-        if config.input_device == config.output_device:
-            self._status = PipelineStatus(
-                state=PipelineState.ERROR,
-                error_message="Input and output devices must differ.",
-            )
-            return self._status
 
         self._config = config
         self._status = PipelineStatus(
@@ -270,7 +261,11 @@ class ClasPipelineService:
                 f"{config.input_baud}#{preset.relay_input_format}"
             )
         relay_out_tcp = f"tcpsvr://:{config.bridge_port}"
-        relay_args: list[str] = ["-in", relay_in, "-out", relay_out_tcp]
+        # `-b 1` = relay-back from the first -out stream (the TCP server) to
+        # the serial input. This is what carries cssr2rtcm3's RTCM3 back down
+        # the single serial port to the receiver. The TCP server MUST stay the
+        # first -out (the optional file record is appended after it).
+        relay_args: list[str] = ["-in", relay_in, "-b", "1", "-out", relay_out_tcp]
         if config.sbf_record_path:
             parent, err = _validate_sbf_record_path(config.sbf_record_path)
             if err is not None:
@@ -304,7 +299,10 @@ class ClasPipelineService:
         await asyncio.sleep(_BIND_GRACE_S)
 
         cssr_in = f"sbf://tcpcli://localhost:{config.bridge_port}"
-        cssr_out = f"serial://{_dev_basename(config.output_device)}:{config.output_baud}"
+        # Write RTCM3 back to the relay's TCP server. The relay's `-b 1`
+        # relay-back then forwards it down the serial line to the receiver —
+        # no second serial port needed.
+        cssr_out = f"tcpcli://localhost:{config.bridge_port}"
         cssr_args: list[str] = []
         # Pass the per-receiver TOML config (signal_remap + CLAS grid/BLQ
         # paths). Without it the OSR generator can't bootstrap a grid

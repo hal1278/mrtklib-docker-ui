@@ -8,12 +8,15 @@ body {
   padding: 0;
 }
 
-/* Semantic colors for solution quality */
+/* Semantic colors for solution quality — "A / Carbon-Azure" status palette.
+   These are single-value (not color-scheme aware). The values below read well
+   on both the near-black dark surfaces and the white light surfaces. If you
+   want per-scheme tuning, move them into cssVariablesResolver instead. */
 :root {
-  --color-fix:    #22c55e;
-  --color-float:  #f59e0b;
-  --color-single: #6b7280;
-  --color-live:   #3b82f6;
+  --color-fix:    #34d399;  /* FIX  */
+  --color-float:  #fbbf24;  /* FLOAT / WARN */
+  --color-single: #6b7280;  /* SINGLE / none */
+  --color-live:   #4c8dff;  /* live / accent */
 }
 
 /* IBM Plex Mono for all monospace contexts */

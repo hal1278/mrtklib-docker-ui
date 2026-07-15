@@ -38,9 +38,9 @@ export function TimeSeriesChart({ points, maxPoints = 300 }: TimeSeriesChartProp
 
   if (data.length === 0) {
     return (
-      <Text size="sm" c="dimmed" ta="center" py="md">
-        No data yet
-      </Text>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 120 }}>
+        <Text size="sm" c="dimmed">No data yet</Text>
+      </div>
     );
   }
 

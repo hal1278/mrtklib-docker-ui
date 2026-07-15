@@ -106,6 +106,12 @@ COPY docker/clas-presets/ /opt/mrtklib/clas-presets/
 RUN chmod -R 444 /opt/mrtklib/clas-presets/ && \
     chmod 555 /opt/mrtklib/clas-presets/
 
+# Bundled read-only UI presets (per mode: realtime/, ...).
+# Merged into GET /api/presets/{mode} alongside user presets in /workspace.
+COPY docker/bundled-presets/ /opt/mrtklib/presets/
+RUN chmod -R 444 /opt/mrtklib/presets/ && \
+    find /opt/mrtklib/presets -type d -exec chmod 555 {} +
+
 # Verify mrtk is installed
 RUN mrtk --version
 

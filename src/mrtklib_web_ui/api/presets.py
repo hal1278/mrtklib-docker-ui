@@ -15,6 +15,13 @@ router = APIRouter()
 WORKSPACE_ROOT = Path("/workspace")
 PRESETS_DIR = WORKSPACE_ROOT / "presets"
 
+# Read-only presets shipped in the image (docker/bundled-presets/ ->
+# /opt/mrtklib/presets/<mode>/*.toml). Merged into the list alongside user
+# presets. Their ids carry a "@" prefix, which _slugify can never produce
+# (it strips everything outside [\w\s-]), so bundled and user ids never clash.
+BUNDLED_PRESETS_DIR = Path("/opt/mrtklib/presets")
+BUNDLED_PREFIX = "@"
+
 
 def _slugify(name: str) -> str:
     """Convert a preset name to a filesystem-safe slug."""
@@ -25,16 +32,64 @@ def _slugify(name: str) -> str:
 _ALLOWED_MODES = {"post", "realtime", "clas"}
 
 
-def _presets_dir(mode: str) -> Path:
-    """Get the presets directory for a mode, creating if needed."""
+def _check_mode(mode: str) -> None:
     if mode not in _ALLOWED_MODES:
         raise HTTPException(
             status_code=400,
             detail=f"Mode must be one of {sorted(_ALLOWED_MODES)}",
         )
+
+
+def _presets_dir(mode: str) -> Path:
+    """Get the user presets directory for a mode, creating if needed."""
+    _check_mode(mode)
     d = PRESETS_DIR / mode
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def _bundled_dir(mode: str) -> Path:
+    """Get the read-only bundled presets directory for a mode (may not exist)."""
+    _check_mode(mode)
+    return BUNDLED_PRESETS_DIR / mode
+
+
+def _bundled_path(mode: str, preset_id: str) -> Path | None:
+    """Resolve a "@"-prefixed bundled preset id to a file inside the bundled
+    dir. Returns None if the id is malformed or escapes the bundled dir."""
+    stem = preset_id[len(BUNDLED_PREFIX):]
+    # Reject path traversal / nested paths — bundled ids are bare stems.
+    if not stem or "/" in stem or "\\" in stem or stem.startswith("."):
+        return None
+    d = _bundled_dir(mode).resolve()
+    path = (d / f"{stem}.toml").resolve()
+    if d != path.parent:
+        return None
+    return path if path.exists() else None
+
+
+def _user_path(mode: str, preset_id: str) -> Path | None:
+    """Resolve a user preset id to a file inside the mode's presets dir.
+
+    Returns None if the id is malformed or would escape the dir (path
+    traversal). User ids are bare stems — no separators, no leading dot.
+    """
+    if not preset_id or "/" in preset_id or "\\" in preset_id or preset_id.startswith("."):
+        return None
+    d = _presets_dir(mode).resolve()
+    path = (d / f"{preset_id}.toml").resolve()
+    if d != path.parent:
+        return None
+    return path
+
+
+def _preset_name(path: Path, fallback_id: str) -> str:
+    """Extract the display name from the leading `# Preset: ` comment."""
+    name = fallback_id.replace("-", " ").title()
+    first_line = path.read_text().split("\n", 1)[0]
+    if first_line.startswith("# Preset: "):
+        name = first_line[len("# Preset: "):].strip()
+    return name
 
 
 def _serialize_toml(config: dict[str, Any]) -> str:
@@ -91,17 +146,34 @@ class PresetUpdateRequest(BaseModel):
 
 
 @router.get("/{mode}")
-async def list_presets(mode: str) -> list[dict[str, str]]:
-    """List all presets for a mode."""
+async def list_presets(mode: str) -> list[dict[str, Any]]:
+    """List all presets for a mode: bundled (read-only) first, then user."""
+    presets: list[dict[str, Any]] = []
+
+    bundled = _bundled_dir(mode)
+    if bundled.is_dir():
+        for f in sorted(bundled.glob("*.toml")):
+            stat = f.stat()
+            preset_id = f"{BUNDLED_PREFIX}{f.stem}"
+            presets.append({
+                "id": preset_id,
+                "name": _preset_name(f, f.stem),
+                "created_at": datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).isoformat(),
+                "updated_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+                "source": "bundled",
+                "read_only": True,
+            })
+
     d = _presets_dir(mode)
-    presets = []
     for f in sorted(d.glob("*.toml")):
         stat = f.stat()
         presets.append({
             "id": f.stem,
-            "name": f.stem.replace("-", " ").title(),
+            "name": _preset_name(f, f.stem),
             "created_at": datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).isoformat(),
             "updated_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+            "source": "user",
+            "read_only": False,
         })
     return presets
 
@@ -134,36 +206,41 @@ async def create_preset(mode: str, body: PresetCreateRequest) -> dict[str, str]:
 
 @router.get("/{mode}/{preset_id}")
 async def get_preset(mode: str, preset_id: str) -> dict[str, Any]:
-    """Get a single preset with its config."""
-    d = _presets_dir(mode)
-    path = d / f"{preset_id}.toml"
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="Preset not found")
+    """Get a single preset with its config (bundled or user)."""
+    read_only = preset_id.startswith(BUNDLED_PREFIX)
+    if read_only:
+        path = _bundled_path(mode, preset_id)
+        if path is None:
+            raise HTTPException(status_code=404, detail="Preset not found")
+    else:
+        path = _user_path(mode, preset_id)
+        if path is None or not path.exists():
+            raise HTTPException(status_code=404, detail="Preset not found")
 
     try:
         config = tomllib.loads(path.read_text())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse preset: {e}")
 
-    # Extract name from first comment line
-    first_line = path.read_text().split("\n")[0]
-    name = preset_id.replace("-", " ").title()
-    if first_line.startswith("# Preset: "):
-        name = first_line[len("# Preset: "):]
-
     return {
         "id": preset_id,
-        "name": name,
+        "name": _preset_name(path, preset_id.lstrip(BUNDLED_PREFIX)),
         "config": config,
+        "read_only": read_only,
     }
 
 
 @router.put("/{mode}/{preset_id}")
 async def update_preset(mode: str, preset_id: str, body: PresetUpdateRequest) -> dict[str, str]:
     """Update a preset (rename or update config)."""
+    if preset_id.startswith(BUNDLED_PREFIX):
+        raise HTTPException(
+            status_code=409,
+            detail="Built-in presets are read-only; duplicate to edit.",
+        )
     d = _presets_dir(mode)
-    path = d / f"{preset_id}.toml"
-    if not path.exists():
+    path = _user_path(mode, preset_id)
+    if path is None or not path.exists():
         raise HTTPException(status_code=404, detail="Preset not found")
 
     if body.name and body.config:
@@ -204,9 +281,13 @@ async def update_preset(mode: str, preset_id: str, body: PresetUpdateRequest) ->
 @router.delete("/{mode}/{preset_id}")
 async def delete_preset(mode: str, preset_id: str) -> dict[str, str]:
     """Delete a preset."""
-    d = _presets_dir(mode)
-    path = d / f"{preset_id}.toml"
-    if not path.exists():
+    if preset_id.startswith(BUNDLED_PREFIX):
+        raise HTTPException(
+            status_code=409,
+            detail="Built-in presets are read-only; cannot delete.",
+        )
+    path = _user_path(mode, preset_id)
+    if path is None or not path.exists():
         raise HTTPException(status_code=404, detail="Preset not found")
     path.unlink()
     return {"status": "deleted"}

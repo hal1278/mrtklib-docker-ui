@@ -12,7 +12,35 @@
 export type PositioningMode =
   | 'single' | 'dgps' | 'kinematic' | 'static'
   | 'moving-base' | 'fixed'
-  | 'ppp-kinematic' | 'ppp-static' | 'ppp-fixed' | 'ppp-rtk';
+  | 'ppp-kinematic' | 'ppp-static' | 'ppp-fixed' | 'ppp-rtk' | 'vrs-rtk';
+
+// [positioning] correction — which SSR/PPP correction provider to use.
+export type CorrectionProvider =
+  | 'none' | 'igs' | 'igs-rts' | 'qzs-madoca' | 'gal-has' | 'bds-b2b' | 'qzs-clas';
+
+// Correction providers valid per positioning mode. Mirrors the validity matrix
+// in MRTKLIB src/pos/mrtk_opt.c — MRTKLIB hard-errors on invalid combos
+// (e.g. "invalid correction=none for mode=ppp-rtk (use qzs-clas)"). Modes not
+// listed here (single/dgps/kinematic/static/moving-base/fixed) accept only 'none'.
+export const CORRECTION_BY_MODE: Partial<Record<PositioningMode, CorrectionProvider[]>> = {
+  'ppp-kinematic': ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-static':    ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-fixed':     ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-rtk':       ['qzs-clas'],
+  'vrs-rtk':       ['qzs-clas'],
+};
+
+export function validCorrections(mode: PositioningMode): CorrectionProvider[] {
+  return CORRECTION_BY_MODE[mode] ?? ['none'];
+}
+
+// Coerce a correction provider to a value valid for the given mode, keeping it
+// unchanged when already valid. Used on import so invalid combos (from presets,
+// TOML import, or the config assistant) don't reach MRTKLIB and hard-error.
+export function coerceCorrection(mode: PositioningMode, correction: CorrectionProvider): CorrectionProvider {
+  const valid = validCorrections(mode);
+  return valid.includes(correction) ? correction : valid[0];
+}
 
 export type Frequency = 'l1' | 'l1+l2' | 'l1+l2+l5' | 'l1+l2+l5+l6' | 'l1+l2+l5+l6+l7';
 
@@ -57,8 +85,6 @@ export type CoordinateFormat = 'deg' | 'dms';
 
 export type LatLonFormat = 'ddd.ddddddd' | 'ddd-mm-ss.sss';
 
-export type Datum = 'wgs84' | 'tokyo' | 'pz90.11';
-
 export type HeightType = 'ellipsoidal' | 'geodetic';
 
 export type GeoidModel = 'internal' | 'egm96' | 'egm08_2.5' | 'egm08_1' | 'gsi2000';
@@ -74,6 +100,12 @@ export type PositionType = 'llh' | 'xyz' | 'single' | 'posfile' | 'rinexhead' | 
 export type PhaseShift = 'off' | 'table';
 
 export type GpsFrequency = 'l1' | 'l1+l2' | 'l1+l5' | 'l1+l2+l5' | 'l1+l5(l2)';
+
+// ── v0.7.6 additions ──────────────────────────────────────────────────────
+export type RobustMode = 'off' | 'igg3';                 // positioning.robust
+export type TdcpMode = 'off' | 'on';                     // positioning.tdcp
+export type SppSeed = 'off' | 'cn0+tdcp' | 'cn0+tdcp+robust'; // clas.enhanced_spp_seed
+export type ReferenceDop = 'zd' | 'sd';                  // ar.thresholds.reference_dop
 
 // ─── [positioning] ───────────────────────────────────────────────────────────
 
@@ -98,9 +130,11 @@ export type SignalMode = 'frequency' | 'signals';
 export interface ClasConfig {
   gridSelectionRadius: number;   // m
   receiverType: string;
-  positionUncertaintyX: number;  // m
-  positionUncertaintyY: number;  // m
-  positionUncertaintyZ: number;  // m
+  // v0.7.6: enhanced SPP seed for PPP-RTK/VRS reconvergence
+  enhancedSppSeed: SppSeed;
+  // v0.7.6: positioning.clas.resilience (max_obs_loss / float_count live in ServerConfig)
+  l6Merge: number;               // L6 message merge mode
+  resetInterval: number;         // periodic filter reset interval (epochs)
 }
 
 export interface CorrectionsConfig {
@@ -117,6 +151,7 @@ export interface CorrectionsConfig {
   gpsFrequency: GpsFrequency;
   qzsFrequency: GpsFrequency;
   tidalCorrection: TidalCorrection;
+  snrFixed: number;              // v0.7.6: fixed output SNR (dB-Hz; 0 = off)
 }
 
 export interface AtmosphereConfig {
@@ -127,6 +162,7 @@ export interface AtmosphereConfig {
 export interface PositioningConfig {
   // [positioning] core
   positioningMode: PositioningMode;
+  correction: CorrectionProvider;
   frequency: Frequency;
   signalMode: SignalMode;         // UI-only: choose between frequency or signals
   signals: string;                // e.g. "G1C,G2W,E1C,E5Q,E7Q,J1C,J5Q,J2X"
@@ -136,6 +172,13 @@ export interface PositioningConfig {
   ephemerisOption: EphemerisOption;
   constellations: ConstellationSelection;
   excludedSatellites: string;
+
+  // v0.7.6 additions (top-level [positioning])
+  robust: RobustMode;
+  robustK0: number;              // IGG-III k0 threshold (<=0: code default)
+  robustK1: number;              // IGG-III k1 threshold (<=0: code default)
+  tdcp: TdcpMode;                // SPP time-differenced carrier phase
+  tdcpJump: number;              // TDCP jump-rejection threshold (m)
 
   // [positioning.snr_mask]
   snrMask: SnrMaskConfig;
@@ -155,14 +198,15 @@ export interface PositioningConfig {
 export interface ARThresholds {
   ratio: number;
   ratio1: number;
-  ratio2: number;
-  ratio3: number;
-  ratio4: number;
   ratio5: number;
   ratio6: number;
   alpha: ARAlpha;
   elevationMask: number;
   holdElevation: number;
+  // v0.7.6 additions
+  maxPdopAr: number;      // max PDOP for AR (0: no limit)
+  maxPdopHold: number;    // max PDOP to hold ambiguity (0: no limit)
+  referenceDop: ReferenceDop;
 }
 
 export interface ARCounters {
@@ -183,7 +227,6 @@ export interface PartialARConfig {
 
 export interface ARHoldConfig {
   variance: number;
-  gain: number;
 }
 
 export interface AmbiguityResolutionConfig {
@@ -193,6 +236,7 @@ export interface AmbiguityResolutionConfig {
   glonassAr: GloARMode;
   bdsAr: BdsARMode;
   qzsAr: QzsARMode;
+  systems: number;   // v0.7.6: [ambiguity_resolution] systems bitmask (PPP-AR)
 
   // [ambiguity_resolution.thresholds]
   thresholds: ARThresholds;
@@ -219,6 +263,9 @@ export interface RejectionConfig {
   gdop: number;
   pseudorangeDiff: number;
   positionErrorCount: number;
+  // v0.7.6 additions
+  sppResidual: number;    // standalone SPP residual reject threshold
+  sppMinSats: number;     // min sats for SPP
 }
 
 // ─── [slip_detection] ────────────────────────────────────────────────────────
@@ -239,6 +286,11 @@ export interface MeasurementErrorConfig {
   phaseBaseline: number;
   doppler: number;
   uraRatio: number;
+  // v0.7.6 additions
+  snrMax: number;         // SNR max (dB-Hz)
+  snrError: number;       // SNR-dependent error term
+  ionosphere: number;     // ionosphere estimation-error term (m)
+  troposphere: number;    // troposphere estimation-error term (m)
 }
 
 export interface InitialStdConfig {
@@ -265,7 +317,6 @@ export interface ProcessNoiseConfig {
 export interface KalmanFilterConfig {
   // [kalman_filter]
   iterations: number;
-  syncSolution: boolean;
 
   // [kalman_filter.measurement_error]
   measurementError: MeasurementErrorConfig;
@@ -302,18 +353,17 @@ export interface SignalSelectionConfig {
 export interface ReceiverConfig {
   ionoCorrection: boolean;
   ignoreChiError: boolean;
-  bds2Bias: boolean;
   pppSatClockBias: number;
   pppSatPhaseBias: number;
   uncorrBias: number;
   maxBiasDt: number;
-  satelliteMode: number;
   phaseShift: PhaseShift;
   isb: boolean;
   referenceType: string;
   maxAge: number;
   baselineLength: number;
   baselineSigma: number;
+  clockJump: boolean;     // v0.7.6: positioning.ppp.clock_jump
 }
 
 // ─── [antenna] ───────────────────────────────────────────────────────────────
@@ -347,7 +397,6 @@ export interface OutputConfig {
   numDecimals: number;
   latLonFormat: LatLonFormat;
   fieldSeparator: string;
-  datum: Datum;
   height: HeightType;
   geoidModel: GeoidModel;
   staticSolutionMode: StaticSolutionMode;
@@ -370,12 +419,17 @@ export interface FilesConfig {
   dcb: string;
   eop: string;
   oceanLoading: string;
-  elevationMaskFile: string;
   fcb: string;
   biasSinex: string;
   cssrGrid: string;
   isbTable: string;
   phaseCycle: string;
+  // v0.7.6 additions
+  tempDir: string;
+  trace: string;              // trace output file (replaces output.debug_trace path)
+  cmdFile1: string;           // rtkrcv startup command files
+  cmdFile2: string;
+  cmdFile3: string;
 }
 
 // ─── [server] ────────────────────────────────────────────────────────────────
@@ -398,6 +452,8 @@ export interface ServerConfig {
   l6Margin: number;
   maxObsLoss: number;
   floatCount: number;
+  startCmd: string;   // v0.7.6: server.start_cmd
+  stopCmd: string;    // v0.7.6: server.stop_cmd
 }
 
 // ─── Time (UI-only, maps to CLI flags -ts/-te/-ti) ───────────────────────────
@@ -468,6 +524,7 @@ export const DEFAULT_CORRECTIONS: CorrectionsConfig = {
   gpsFrequency: 'l1+l2',
   qzsFrequency: 'l1+l2',
   tidalCorrection: 'off',
+  snrFixed: 0,
 };
 
 export const DEFAULT_ATMOSPHERE: AtmosphereConfig = {
@@ -477,6 +534,7 @@ export const DEFAULT_ATMOSPHERE: AtmosphereConfig = {
 
 export const DEFAULT_POSITIONING: PositioningConfig = {
   positioningMode: 'kinematic',
+  correction: 'none',
   frequency: 'l1+l2',
   signalMode: 'frequency',
   signals: '',
@@ -489,6 +547,11 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
     sbas: true, beidou: true, irnss: false,
   },
   excludedSatellites: '',
+  robust: 'off',
+  robustK0: 1.5,   // IGG-III code default (mrtk_rtkpos.c)
+  robustK1: 4.0,   // IGG-III code default (mrtk_rtkpos.c)
+  tdcp: 'off',
+  tdcpJump: 5.0,   // code default (mrtk_spp.c: tdcpjump>0 ? : 5.0)
   snrMask: {
     enableRover: false,
     enableBase: false,
@@ -503,9 +566,9 @@ export const DEFAULT_POSITIONING: PositioningConfig = {
   clas: {
     gridSelectionRadius: 1000,
     receiverType: '',
-    positionUncertaintyX: 10.0,
-    positionUncertaintyY: 10.0,
-    positionUncertaintyZ: 10.0,
+    enhancedSppSeed: 'cn0+tdcp',
+    l6Merge: 0,
+    resetInterval: 0,
   },
 };
 
@@ -515,17 +578,18 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   glonassAr: 'on',
   bdsAr: 'on',
   qzsAr: 'on',
+  systems: 1,   // SYS_GPS (0x01) — matches prcopt_default.arsys (mrtk_opt.c)
   thresholds: {
     ratio: 3.0,
     ratio1: 0.9999,
-    ratio2: 0.25,
-    ratio3: 0.0,
-    ratio4: 0.0,
     ratio5: 0.0,
     ratio6: 0.0,
     alpha: '0.1%',
     elevationMask: 0,
     holdElevation: 0,
+    maxPdopAr: 0.0,
+    maxPdopHold: 0.0,
+    referenceDop: 'zd',
   },
   counters: {
     lockCount: 0,
@@ -543,7 +607,6 @@ export const DEFAULT_AMBIGUITY_RESOLUTION: AmbiguityResolutionConfig = {
   },
   hold: {
     variance: 0.001,
-    gain: 0.01,
   },
 };
 
@@ -557,6 +620,8 @@ export const DEFAULT_REJECTION: RejectionConfig = {
   gdop: 30.0,
   pseudorangeDiff: 0.0,
   positionErrorCount: 0,
+  sppResidual: 0.0,   // prcopt_default.rejethres
+  sppMinSats: 7,      // prcopt_default.rejeminsat
 };
 
 export const DEFAULT_SLIP_DETECTION: SlipDetectionConfig = {
@@ -566,7 +631,6 @@ export const DEFAULT_SLIP_DETECTION: SlipDetectionConfig = {
 
 export const DEFAULT_KALMAN_FILTER: KalmanFilterConfig = {
   iterations: 1,
-  syncSolution: false,
   measurementError: {
     codePhaseRatioL1: 100.0,
     codePhaseRatioL2: 100.0,
@@ -576,6 +640,10 @@ export const DEFAULT_KALMAN_FILTER: KalmanFilterConfig = {
     phaseBaseline: 0.0,
     doppler: 1.0,
     uraRatio: 0.0,
+    snrMax: 0.0,        // provisional — verify against mrtk_opt.c
+    snrError: 0.0,      // provisional
+    ionosphere: 0.0,    // stats_erriono
+    troposphere: 0.0,   // stats_errtrop
   },
   initialStd: {
     bias: 30.0,
@@ -617,18 +685,17 @@ export const DEFAULT_SIGNAL_SELECTION: SignalSelectionConfig = {
 export const DEFAULT_RECEIVER: ReceiverConfig = {
   ionoCorrection: true,
   ignoreChiError: false,
-  bds2Bias: false,
   pppSatClockBias: 0,
   pppSatPhaseBias: 0,
   uncorrBias: 0,
   maxBiasDt: 0,
-  satelliteMode: 0,
   phaseShift: 'off',
   isb: false,
   referenceType: '',
   maxAge: 30.0,
   baselineLength: 0.0,
   baselineSigma: 0.0,
+  clockJump: false,
 };
 
 export const DEFAULT_ANTENNA: AntennaConfig = {
@@ -659,7 +726,6 @@ export const DEFAULT_OUTPUT: OutputConfig = {
   numDecimals: 3,
   latLonFormat: 'ddd.ddddddd',
   fieldSeparator: '',
-  datum: 'wgs84',
   height: 'ellipsoidal',
   geoidModel: 'internal',
   staticSolutionMode: 'all',
@@ -680,12 +746,16 @@ export const DEFAULT_FILES: FilesConfig = {
   dcb: '',
   eop: '',
   oceanLoading: '',
-  elevationMaskFile: '',
   fcb: '',
   biasSinex: '',
   cssrGrid: '',
   isbTable: '',
   phaseCycle: '',
+  tempDir: '',
+  trace: '',
+  cmdFile1: '',
+  cmdFile2: '',
+  cmdFile3: '',
 };
 
 export const DEFAULT_SERVER: ServerConfig = {
@@ -706,6 +776,8 @@ export const DEFAULT_SERVER: ServerConfig = {
   l6Margin: 0,
   maxObsLoss: 90.0,
   floatCount: 15,
+  startCmd: '',
+  stopCmd: '',
 };
 
 // Generate today's date as YYYY/MM/DD

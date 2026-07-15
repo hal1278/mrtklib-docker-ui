@@ -84,7 +84,7 @@ async def stop_run() -> StopResponse:
     """Stop the running mrtk run process."""
     try:
         await _service.stop()
-        await _broadcast({"type": "status", "server_state": "stop"})
+        await _broadcast({"type": "status", "server_state": "stop", "running": False})
         return StopResponse(status="ok", message="mrtk run stopped")
     except Exception as e:
         logger.exception("Failed to stop mrtk run")
@@ -123,12 +123,16 @@ async def websocket_run(websocket: WebSocket) -> None:
     await websocket.accept()
     _ws_clients.add(websocket)
     try:
-        # Send initial status
+        # Send initial status. The explicit `running` flag drives the client's
+        # Start/Stop lifecycle; the per-poll rtkrcv `server_state` never does.
+        # When not running we send running=False WITHOUT `exited`, so a client
+        # that is mid-startup (connects the WS before /start returns) ignores it
+        # instead of flipping its optimistic "starting" state back to idle.
         if _service.is_running:
             status = await _service.get_status()
-            await websocket.send_text(json.dumps({"type": "status", **status}))
+            await websocket.send_text(json.dumps({"type": "status", "running": True, **status}))
         else:
-            await websocket.send_text(json.dumps({"type": "status", "server_state": "stop"}))
+            await websocket.send_text(json.dumps({"type": "status", "server_state": "stop", "running": False}))
 
         # Keep connection alive
         while True:

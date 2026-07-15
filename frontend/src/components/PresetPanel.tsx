@@ -10,6 +10,7 @@ import {
   ScrollArea,
   Menu,
   Modal,
+  Badge,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -29,6 +30,8 @@ interface Preset {
   name: string;
   created_at: string;
   updated_at: string;
+  /** Bundled read-only preset shipped in the image — cannot rename/delete. */
+  read_only?: boolean;
 }
 
 interface PresetPanelProps {
@@ -174,7 +177,14 @@ export function PresetPanel({ opened, onClose, mode, currentConfig, onLoad }: Pr
                           autoFocus
                         />
                       ) : (
-                        <Text size="xs" fw={500} truncate>{p.name}</Text>
+                        <Group gap={4} wrap="nowrap">
+                          <Text size="xs" fw={500} truncate>{p.name}</Text>
+                          {p.read_only && (
+                            <Badge size="xs" variant="light" color="gray" style={{ flexShrink: 0 }}>
+                              Built-in
+                            </Badge>
+                          )}
+                        </Group>
                       )}
                       <Text size="xs" c="dimmed" style={{ fontSize: '9px' }}>
                         {new Date(p.updated_at).toLocaleDateString()}
@@ -190,16 +200,20 @@ export function PresetPanel({ opened, onClose, mode, currentConfig, onLoad }: Pr
                         </ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
-                        <Menu.Item leftSection={<IconPencil size={13} />}
-                          onClick={() => { setRenamingId(p.id); setRenameValue(p.name); }}>
-                          Rename
-                        </Menu.Item>
+                        {!p.read_only && (
+                          <Menu.Item leftSection={<IconPencil size={13} />}
+                            onClick={() => { setRenamingId(p.id); setRenameValue(p.name); }}>
+                            Rename
+                          </Menu.Item>
+                        )}
                         <Menu.Item leftSection={<IconCopy size={13} />} onClick={() => handleDuplicate(p)}>
                           Duplicate
                         </Menu.Item>
-                        <Menu.Item leftSection={<IconTrash size={13} />} color="red" onClick={() => setConfirmDeleteId(p.id)}>
-                          Delete
-                        </Menu.Item>
+                        {!p.read_only && (
+                          <Menu.Item leftSection={<IconTrash size={13} />} color="red" onClick={() => setConfirmDeleteId(p.id)}>
+                            Delete
+                          </Menu.Item>
+                        )}
                       </Menu.Dropdown>
                     </Menu>
                   </Group>

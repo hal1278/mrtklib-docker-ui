@@ -4,7 +4,7 @@
  */
 
 import type { MrtkPostConfig } from '../types/mrtkPostConfig';
-import { DEFAULT_MRTK_POST_CONFIG } from '../types/mrtkPostConfig';
+import { DEFAULT_MRTK_POST_CONFIG, coerceCorrection } from '../types/mrtkPostConfig';
 
 type AnyDict = Record<string, unknown>;
 
@@ -19,6 +19,23 @@ function boolToOnOff(obj: AnyDict | undefined, key: string, fallback: string): s
   const v = obj[key];
   if (typeof v === 'boolean') return v ? 'on' : 'off';
   return String(v);
+}
+
+/**
+ * Read a value from the v0.7.6 location first, falling back to the legacy
+ * v0.6.5 location (so pre-migration presets still import), then a default.
+ */
+function getFb<T>(primary: AnyDict | undefined, pk: string, legacy: AnyDict | undefined, lk: string, fallback: T): T {
+  if (primary && pk in primary) return primary[pk] as T;
+  if (legacy && lk in legacy) return legacy[lk] as T;
+  return fallback;
+}
+
+/** Normalize a TOML value that may be bool (v0.7.6) or number (legacy) to number. */
+function boolNum(v: unknown): number {
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  if (typeof v === 'number') return v;
+  return 0;
 }
 
 // Reverse maps: MRTKLIB TOML values → frontend internal values
@@ -77,13 +94,25 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
   const kfPn = (kf.process_noise ?? {}) as AnyDict;
   const kfIs = (kf.initial_std ?? {}) as AnyDict;
   const sig = (toml.signals ?? {}) as AnyDict;
-  const rx = (toml.receiver ?? {}) as AnyDict;
+  const rx = (toml.receiver ?? {}) as AnyDict;         // legacy v0.6.5 fallback
   const antR = ((toml.antenna ?? {}) as AnyDict).rover as AnyDict | undefined;
   const antB = ((toml.antenna ?? {}) as AnyDict).base as AnyDict | undefined;
   const out = (toml.output ?? {}) as AnyDict;
   const files = (toml.files ?? {}) as AnyDict;
   const srv = (toml.server ?? {}) as AnyDict;
-  const af = (toml.adaptive_filter ?? {}) as AnyDict;
+  const af = (toml.adaptive_filter ?? {}) as AnyDict;  // legacy top-level fallback
+  // v0.7.6 positioning sub-tables (relocated from [receiver]/[server]/top-level)
+  const rel = (pos.relative ?? {}) as AnyDict;
+  const ppp = (pos.ppp ?? {}) as AnyDict;
+  const spp = (pos.spp ?? {}) as AnyDict;
+  const madoca = (pos.madoca ?? {}) as AnyDict;
+  const clasAmb = (clas.ambiguities ?? {}) as AnyDict;
+  const clasRes = (clas.resilience ?? {}) as AnyDict;
+  const clasAf = (clas.adaptive_filter ?? {}) as AnyDict;
+  const inp = (toml.input ?? {}) as AnyDict;
+  const inRnx = (inp.rinex ?? {}) as AnyDict;
+  const inRtcm = (inp.rtcm ?? {}) as AnyDict;
+  const inSbas = (inp.sbas ?? {}) as AnyDict;
 
   // Map systems array back to constellations object
   const systems = (pos.systems ?? []) as string[];
@@ -99,9 +128,15 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       }
     : d.positioning.constellations;
 
+  const positioningMode = revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'];
+
   return {
     positioning: {
-      positioningMode: revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'],
+      ...d.positioning,
+      positioningMode,
+      // Coerce to a provider valid for the mode — MRTKLIB hard-errors on invalid
+      // combos (e.g. mode=ppp-rtk with correction=none).
+      correction: coerceCorrection(positioningMode, get(pos, 'correction', d.positioning.correction) as MrtkPostConfig['positioning']['correction']),
       frequency: revMap(get(pos, 'frequency', d.positioning.frequency), FREQ_REV) as MrtkPostConfig['positioning']['frequency'],
       signals: Array.isArray(pos.signals) ? (pos.signals as string[]).join(',') : get(pos, 'signals', d.positioning.signals),
       signalMode: pos.signals ? 'signals' : 'frequency',
@@ -114,6 +149,12 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       ) as MrtkPostConfig['positioning']['ephemerisOption'],
       constellations,
       excludedSatellites: Array.isArray(pos.excluded_sats) ? (pos.excluded_sats as string[]).join(' ') : get(pos, 'excluded_sats', d.positioning.excludedSatellites),
+      robust: get(pos, 'robust', d.positioning.robust) as MrtkPostConfig['positioning']['robust'],
+      robustK0: get(pos, 'robust_k0', d.positioning.robustK0),
+      robustK1: get(pos, 'robust_k1', d.positioning.robustK1),
+      // tdcp is a SWTOPT key: confs may write it as bool (true/false) or "on"/"off"
+      tdcp: boolToOnOff(pos, 'tdcp', d.positioning.tdcp) as MrtkPostConfig['positioning']['tdcp'],
+      tdcpJump: get(pos, 'tdcp_jump', d.positioning.tdcpJump),
       snrMask: {
         enableRover: get(snr, 'rover_enabled', d.positioning.snrMask.enableRover),
         enableBase: get(snr, 'base_enabled', d.positioning.snrMask.enableBase),
@@ -135,6 +176,9 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
         shapiroDelay: get(corr, 'shapiro_delay', d.positioning.corrections.shapiroDelay),
         excludeQzsRef: get(corr, 'exclude_qzs_ref', d.positioning.corrections.excludeQzsRef),
         noPhaseBiasAdj: get(corr, 'no_phase_bias_adj', d.positioning.corrections.noPhaseBiasAdj),
+        gpsFrequency: get(corr, 'gps_frequency', d.positioning.corrections.gpsFrequency),
+        qzsFrequency: get(corr, 'qzs_frequency', d.positioning.corrections.qzsFrequency),
+        snrFixed: get(corr, 'snr_fixed', d.positioning.corrections.snrFixed),
         tidalCorrection: get(corr, 'tidal_correction', d.positioning.corrections.tidalCorrection),
       },
       atmosphere: {
@@ -142,11 +186,12 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
         troposphere: revMap(get(atm, 'troposphere', d.positioning.atmosphere.troposphere), TROPO_REV) as MrtkPostConfig['positioning']['atmosphere']['troposphere'],
       },
       clas: {
+        ...d.positioning.clas,
         gridSelectionRadius: get(clas, 'grid_selection_radius', d.positioning.clas.gridSelectionRadius),
         receiverType: get(clas, 'receiver_type', d.positioning.clas.receiverType),
-        positionUncertaintyX: get(clas, 'position_uncertainty_x', d.positioning.clas.positionUncertaintyX),
-        positionUncertaintyY: get(clas, 'position_uncertainty_y', d.positioning.clas.positionUncertaintyY),
-        positionUncertaintyZ: get(clas, 'position_uncertainty_z', d.positioning.clas.positionUncertaintyZ),
+        enhancedSppSeed: get(clas, 'enhanced_spp_seed', d.positioning.clas.enhancedSppSeed) as MrtkPostConfig['positioning']['clas']['enhancedSppSeed'],
+        l6Merge: get(clasRes, 'l6_merge', d.positioning.clas.l6Merge),
+        resetInterval: get(clasRes, 'reset_interval', d.positioning.clas.resetInterval),
       },
     },
     ambiguityResolution: {
@@ -156,18 +201,19 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       glonassAr: boolToOnOff(ar, 'glonass_ar', d.ambiguityResolution.glonassAr) as typeof d.ambiguityResolution.glonassAr,
       bdsAr: boolToOnOff(ar, 'bds_ar', d.ambiguityResolution.bdsAr) as typeof d.ambiguityResolution.bdsAr,
       qzsAr: boolToOnOff(ar, 'qzs_ar', d.ambiguityResolution.qzsAr) as typeof d.ambiguityResolution.qzsAr,
+      systems: get(ar, 'systems', d.ambiguityResolution.systems),
       thresholds: {
         ...d.ambiguityResolution.thresholds,
         ratio: get(arTh, 'ratio', d.ambiguityResolution.thresholds.ratio),
         ratio1: get(arTh, 'ratio1', d.ambiguityResolution.thresholds.ratio1),
-        ratio2: get(arTh, 'ratio2', d.ambiguityResolution.thresholds.ratio2),
-        ratio3: get(arTh, 'ratio3', d.ambiguityResolution.thresholds.ratio3),
-        ratio4: get(arTh, 'ratio4', d.ambiguityResolution.thresholds.ratio4),
         ratio5: get(arTh, 'ratio5', d.ambiguityResolution.thresholds.ratio5),
         ratio6: get(arTh, 'ratio6', d.ambiguityResolution.thresholds.ratio6),
         alpha: get(arTh, 'alpha', d.ambiguityResolution.thresholds.alpha),
         elevationMask: get(arTh, 'elevation_mask', d.ambiguityResolution.thresholds.elevationMask),
         holdElevation: get(arTh, 'hold_elevation', d.ambiguityResolution.thresholds.holdElevation),
+        maxPdopAr: get(arTh, 'max_pdop_ar', d.ambiguityResolution.thresholds.maxPdopAr),
+        maxPdopHold: get(arTh, 'max_pdop_hold', d.ambiguityResolution.thresholds.maxPdopHold),
+        referenceDop: get(arTh, 'reference_dop', d.ambiguityResolution.thresholds.referenceDop) as MrtkPostConfig['ambiguityResolution']['thresholds']['referenceDop'],
       },
       counters: {
         ...d.ambiguityResolution.counters,
@@ -187,7 +233,6 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       },
       hold: {
         variance: get(arHold, 'variance', d.ambiguityResolution.hold.variance),
-        gain: get(arHold, 'gain', d.ambiguityResolution.hold.gain),
       },
     },
     rejection: {
@@ -201,6 +246,8 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       fixChiSquare: get(rej, 'fix_chi_square', d.rejection.fixChiSquare),
       pseudorangeDiff: get(rej, 'pseudorange_diff', d.rejection.pseudorangeDiff),
       positionErrorCount: get(rej, 'position_error_count', d.rejection.positionErrorCount),
+      sppResidual: get(rej, 'spp_residual', d.rejection.sppResidual),
+      sppMinSats: get(rej, 'spp_min_sats', d.rejection.sppMinSats),
     },
     slipDetection: {
       ...d.slipDetection,
@@ -208,7 +255,6 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
     },
     kalmanFilter: {
       iterations: get(kf, 'iterations', d.kalmanFilter.iterations),
-      syncSolution: get(kf, 'sync_solution', d.kalmanFilter.syncSolution),
       measurementError: {
         ...d.kalmanFilter.measurementError,
         codePhaseRatioL1: get(kfMe, 'code_phase_ratio_L1', d.kalmanFilter.measurementError.codePhaseRatioL1),
@@ -218,6 +264,10 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
         phaseElevation: get(kfMe, 'phase_elevation', d.kalmanFilter.measurementError.phaseElevation),
         phaseBaseline: get(kfMe, 'phase_baseline', d.kalmanFilter.measurementError.phaseBaseline),
         doppler: get(kfMe, 'doppler', d.kalmanFilter.measurementError.doppler),
+        snrMax: get(kfMe, 'snr_max', d.kalmanFilter.measurementError.snrMax),
+        snrError: get(kfMe, 'snr_error', d.kalmanFilter.measurementError.snrError),
+        ionosphere: get(kfMe, 'ionosphere', d.kalmanFilter.measurementError.ionosphere),
+        troposphere: get(kfMe, 'troposphere', d.kalmanFilter.measurementError.troposphere),
       },
       initialStd: {
         bias: get(kfIs, 'bias', d.kalmanFilter.initialStd.bias),
@@ -249,13 +299,20 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
     },
     receiver: {
       ...d.receiver,
-      ionoCorrection: get(rx, 'iono_correction', d.receiver.ionoCorrection),
-      isb: get(rx, 'isb', d.receiver.isb),
-      phaseShift: get(rx, 'phase_shift', d.receiver.phaseShift),
-      referenceType: get(rx, 'reference_type', d.receiver.referenceType),
-      maxAge: get(rx, 'max_age', d.receiver.maxAge),
-      baselineLength: get(rx, 'baseline_length', d.receiver.baselineLength),
-      baselineSigma: get(rx, 'baseline_sigma', d.receiver.baselineSigma),
+      // relocated to positioning.* in v0.7.6 (legacy [receiver] as fallback)
+      ionoCorrection: getFb(madoca, 'iono_correction', rx, 'iono_correction', d.receiver.ionoCorrection),
+      ignoreChiError: getFb(spp, 'ignore_chi_error', rx, 'ignore_chi_error', d.receiver.ignoreChiError),
+      pppSatClockBias: getFb(ppp, 'satellite_clock_bias', rx, 'ppp_sat_clock_bias', d.receiver.pppSatClockBias),
+      pppSatPhaseBias: getFb(ppp, 'satellite_phase_bias', rx, 'ppp_sat_phase_bias', d.receiver.pppSatPhaseBias),
+      uncorrBias: boolNum(getFb<unknown>(ppp, 'drop_uncorrected_code', rx, 'uncorr_bias', d.receiver.uncorrBias)),
+      maxBiasDt: getFb(ppp, 'max_bias_dt', rx, 'max_bias_dt', d.receiver.maxBiasDt),
+      clockJump: getFb(ppp, 'clock_jump', rx, 'clock_jump', d.receiver.clockJump),
+      phaseShift: getFb(clasAmb, 'phase_shift', rx, 'phase_shift', d.receiver.phaseShift),
+      isb: getFb(clasAmb, 'isb', rx, 'isb', d.receiver.isb),
+      referenceType: getFb(clasAmb, 'reference_type', rx, 'reference_type', d.receiver.referenceType),
+      maxAge: getFb(rel, 'max_age', rx, 'max_age', d.receiver.maxAge),
+      baselineLength: getFb(rel, 'baseline_length', rx, 'baseline_length', d.receiver.baselineLength),
+      baselineSigma: getFb(rel, 'baseline_sigma', rx, 'baseline_sigma', d.receiver.baselineSigma),
     },
     antenna: {
       rover: {
@@ -331,7 +388,11 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       phaseCycle: get(files, 'phase_cycle', d.files.phaseCycle),
       fcb: get(files, 'fcb', d.files.fcb),
       biasSinex: get(files, 'bias_sinex', d.files.biasSinex),
-      elevationMaskFile: get(files, 'elevation_mask_file', d.files.elevationMaskFile),
+      tempDir: get(files, 'temp_dir', d.files.tempDir),
+      trace: get(files, 'trace', d.files.trace),
+      cmdFile1: get(files, 'cmd_file_1', d.files.cmdFile1),
+      cmdFile2: get(files, 'cmd_file_2', d.files.cmdFile2),
+      cmdFile3: get(files, 'cmd_file_3', d.files.cmdFile3),
     },
     server: {
       ...d.server,
@@ -343,23 +404,26 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       navMsgSelect: get(srv, 'nav_msg_select', d.server.navMsgSelect),
       proxy: get(srv, 'proxy', d.server.proxy),
       swapMargin: get(srv, 'swap_margin', d.server.swapMargin),
-      timeInterpolation: get(srv, 'time_interpolation', d.server.timeInterpolation),
-      sbasSatellite: get(srv, 'sbas_satellite', d.server.sbasSatellite),
-      rinexOption1: get(srv, 'rinex_option_1', d.server.rinexOption1),
-      rinexOption2: get(srv, 'rinex_option_2', d.server.rinexOption2),
-      pppOption: get(srv, 'ppp_option', d.server.pppOption),
-      rtcmOption: get(srv, 'rtcm_option', d.server.rtcmOption),
+      startCmd: get(srv, 'start_cmd', d.server.startCmd),
+      stopCmd: get(srv, 'stop_cmd', d.server.stopCmd),
+      // relocated to positioning.* / input.* in v0.7.6 (legacy [server] fallback)
+      timeInterpolation: getFb(rel, 'time_interpolation', srv, 'time_interpolation', d.server.timeInterpolation),
+      sbasSatellite: String(getFb(inSbas, 'satellite', srv, 'sbas_satellite', d.server.sbasSatellite)),
+      rinexOption1: getFb(inRnx, 'option_1', srv, 'rinex_option_1', d.server.rinexOption1),
+      rinexOption2: getFb(inRnx, 'option_2', srv, 'rinex_option_2', d.server.rinexOption2),
+      pppOption: getFb(ppp, 'options', srv, 'ppp_option', d.server.pppOption),
+      rtcmOption: getFb(inRtcm, 'options', srv, 'rtcm_option', d.server.rtcmOption),
       l6Margin: get(srv, 'l6_margin', d.server.l6Margin),
-      maxObsLoss: get(srv, 'max_obs_loss', d.server.maxObsLoss),
-      floatCount: get(srv, 'float_count', d.server.floatCount),
+      maxObsLoss: getFb(clasRes, 'max_obs_loss', srv, 'max_obs_loss', d.server.maxObsLoss),
+      floatCount: getFb(clasRes, 'float_count', srv, 'float_count', d.server.floatCount),
     },
     adaptiveFilter: {
       ...d.adaptiveFilter,
-      enabled: get(af, 'enabled', d.adaptiveFilter.enabled),
-      ionoForgetting: get(af, 'iono_forgetting', d.adaptiveFilter.ionoForgetting),
-      ionoGain: get(af, 'iono_gain', d.adaptiveFilter.ionoGain),
-      pvaForgetting: get(af, 'pva_forgetting', d.adaptiveFilter.pvaForgetting),
-      pvaGain: get(af, 'pva_gain', d.adaptiveFilter.pvaGain),
+      enabled: getFb(clasAf, 'enabled', af, 'enabled', d.adaptiveFilter.enabled),
+      ionoForgetting: getFb(clasAf, 'iono_forgetting', af, 'iono_forgetting', d.adaptiveFilter.ionoForgetting),
+      ionoGain: getFb(clasAf, 'iono_gain', af, 'iono_gain', d.adaptiveFilter.ionoGain),
+      pvaForgetting: getFb(clasAf, 'pva_forgetting', af, 'pva_forgetting', d.adaptiveFilter.pvaForgetting),
+      pvaGain: getFb(clasAf, 'pva_gain', af, 'pva_gain', d.adaptiveFilter.pvaGain),
     },
     time: d.time,
   };

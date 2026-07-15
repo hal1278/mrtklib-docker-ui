@@ -7,6 +7,7 @@ import {
   Grid,
   Group,
   ScrollArea,
+  SegmentedControl,
   Stack,
   Tabs,
   Text,
@@ -37,7 +38,9 @@ import {
 } from '@tabler/icons-react';
 import { PostProcessingConfiguration  } from './components';
 import { ResultViewer } from './components/viewer';
-import { RealTimeProcessing } from './components/RealTimeProcessing';
+import { ConsoleFrame } from './components/ConsoleFrame';
+import { RealTimeProcessing, type RtLiveStatus } from './components/RealTimeProcessing';
+import { QUALITY } from './components/RtMetricsRow';
 import { ConversionPanel } from './components/ConversionPanel';
 import { StreamPathHelp } from './components/StreamPathHelp';
 import { ClasPipelinePanel } from './components/ClasPipelinePanel';
@@ -327,27 +330,32 @@ function PostProcessingRightPanel({
 
         {/* Console tab */}
         <Tabs.Panel value="console" style={{ flex: 1, minHeight: 0 }}>
-          <ScrollArea h={CONTENT_HEIGHT} viewportRef={consoleViewportRef} p="sm">
+          <ScrollArea
+            h={CONTENT_HEIGHT}
+            viewportRef={consoleViewportRef}
+            styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+          >
             {logLines.length === 0 ? (
-              <Text size="sm" c="dimmed" fs="italic" ff="monospace">
+              <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px' }}>
                 Waiting for output...
               </Text>
             ) : (
-              <Code
-                block
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'light-dark(var(--mantine-color-dark-8), var(--mantine-color-green-4))',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  fontSize: '12px',
-                  lineHeight: 1.6,
-                }}
-              >
-                {logLines.map((line, index) => (
-                  <div key={index}>{maskLogLine(line)}</div>
-                ))}
-              </Code>
+              logLines.map((line, index) => (
+                <Text
+                  key={index}
+                  size="xs"
+                  c="gray.4"
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: '11px',
+                    lineHeight: 1.5,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {maskLogLine(line)}
+                </Text>
+              ))
             )}
           </ScrollArea>
         </Tabs.Panel>
@@ -433,48 +441,54 @@ function SolutionView({
     }
   }, [content]);
 
+  const consoleBg = 'var(--mantine-color-dark-8, #1a1b1e)';
+
   if (loading) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="xs" c="dimmed">Loading solution file...</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Loading solution file...</Text>
       </Stack>
     );
   }
 
   if (error) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="xs" c="dimmed" fs="italic" ff="monospace">{error}</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{error}</Text>
       </Stack>
     );
   }
 
   if (!content) {
     return (
-      <Stack align="center" justify="center" h={maxHeight} gap="xs">
-        <Text size="sm" c="dimmed" fs="italic" ff="monospace">No solution file to display</Text>
+      <Stack align="center" justify="center" h={maxHeight} gap="xs" style={{ backgroundColor: consoleBg }}>
+        <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>No solution file to display</Text>
       </Stack>
     );
   }
 
   return (
-    <ScrollArea h={maxHeight} viewportRef={viewportRef} p="sm">
-      <Code
-        block
+    <ScrollArea
+      h={maxHeight}
+      viewportRef={viewportRef}
+      styles={{ viewport: { backgroundColor: consoleBg, padding: '8px 12px' } }}
+    >
+      <Text
+        c="gray.4"
         style={{
-          backgroundColor: 'transparent',
+          fontFamily: "'IBM Plex Mono', monospace",
           whiteSpace: 'pre',
           fontSize: '11px',
           lineHeight: 1.5,
         }}
       >
         {content}
-      </Code>
+      </Text>
     </ScrollArea>
   );
 }
 
-function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean }) {
+function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured, configOpen = true, onToggleConfig }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void }) {
   const [roverFile, setRoverFile] = useState('/workspace/rover.obs');
   const [baseFile, setBaseFile] = useState('');
   const [navFile, setNavFile] = useState('/workspace/nav.nav');
@@ -654,9 +668,10 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
 
   return (
     <>
-    <Grid gutter="md">
-      {/* Left Column: Configuration & Control */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+    <ConsoleFrame
+      configOpen={configOpen}
+      onToggleConfig={onToggleConfig ?? (() => {})}
+      config={
         <Stack gap="xs">
           <PostProcessingConfiguration
             onConfigChange={setConfig}
@@ -680,6 +695,7 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
             onExportConf={handleExportConf}
             onQcPreview={() => setQcModalOpened(true)}
             roverFileValid={!!roverFile}
+            onCollapse={onToggleConfig}
           />
 
           {/* Error Display */}
@@ -689,10 +705,8 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
             </Alert>
           )}
         </Stack>
-      </Grid.Col>
-
-      {/* Right Column: Monitoring */}
-      <Grid.Col span={{ base: 12, md: 6 }}>
+      }
+      workspace={
         <PostProcessingRightPanel
           processStatus={processStatus}
           progress={progress}
@@ -700,9 +714,8 @@ function PostProcessingPanel({ onNavigateToAiSettings, aiConfigured }: { onNavig
           outputFile={outputFile}
           onClearLog={() => setLogLines([])}
         />
-      </Grid.Col>
-
-    </Grid>
+      }
+    />
 
     <ObsViewerModal
       opened={qcModalOpened}
@@ -1199,28 +1212,32 @@ function StreamServerPanel() {
 
             {streams.map((stream) => (
               <Tabs.Panel key={stream.id} value={stream.id} style={{ flex: 1, minHeight: 0 }}>
-                <ScrollArea h={CONSOLE_HEIGHT} viewportRef={stream.id === activeStreamId ? consoleViewportRef : undefined} p="sm">
+                <ScrollArea
+                  h={CONSOLE_HEIGHT}
+                  viewportRef={stream.id === activeStreamId ? consoleViewportRef : undefined}
+                  styles={{ viewport: { backgroundColor: 'var(--mantine-color-dark-8, #1a1b1e)', padding: '8px 12px' } }}
+                >
                   {stream.logLines.length === 0 ? (
-                    <Text size="sm" c="dimmed" fs="italic" ff="monospace">
+                    <Text size="xs" c="dimmed" fs="italic" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px' }}>
                       Waiting for output...
                     </Text>
                   ) : (
-                    <Code
-                      block
-                      style={{
-                        backgroundColor: 'transparent',
-                        color: 'light-dark(var(--mantine-color-dark-8), var(--mantine-color-green-4))',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        fontSize: '11px',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {stream.logLines.map((line, index) => (
-                        <div key={index}>{maskLogLine(line)}</div>
-                      ))}
-                    </Code>
+                    stream.logLines.map((line, index) => (
+                      <Text
+                        key={index}
+                        size="xs"
+                        c="gray.4"
+                        style={{
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontSize: '11px',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {maskLogLine(line)}
+                      </Text>
+                    ))
                   )}
                 </ScrollArea>
               </Tabs.Panel>
@@ -1252,14 +1269,78 @@ function StreamServerWithCLAS() {
   );
 }
 
-function RealTimePanel({ onNavigateToAiSettings, aiConfigured }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean }) {
-  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} />;
+function RealTimePanel({ onNavigateToAiSettings, aiConfigured, configOpen, onToggleConfig, onLiveStatus }: { onNavigateToAiSettings?: () => void; aiConfigured?: boolean; configOpen?: boolean; onToggleConfig?: () => void; onLiveStatus?: (s: RtLiveStatus | null) => void }) {
+  return <RealTimeProcessing onNavigateToAiSettings={onNavigateToAiSettings} aiConfigured={aiConfigured} configOpen={configOpen} onToggleConfig={onToggleConfig} onLiveStatus={onLiveStatus} />;
 }
 
 // ConversionPanel is now imported from ./components/ConversionPanel
 
+// Primary modes live in the header SegmentedControl; the remaining screens move
+// to a secondary "More" menu (console redesign Phase 2).
+const PRIMARY_MODES = [
+  { value: 'realtime', label: 'Real-time' },
+  { value: 'post-processing', label: 'Post-processing' },
+] as const;
+
+const SECONDARY_VIEWS = [
+  { value: 'stream-server', label: 'Stream Server' },
+  { value: 'conversion', label: 'Conversion' },
+  { value: 'tools', label: 'Tools' },
+] as const;
+
+const MONO = "'IBM Plex Mono', monospace";
+
+/** Bottom status bar (console redesign Phase 2/4). Shows live RT solution
+ *  values when a Real-time session is producing them; dashes otherwise. */
+function StatusBar({ activeTab, mrtkVersion, rtStatus }: { activeTab: string; mrtkVersion: string; rtStatus: RtLiveStatus | null }) {
+  const modeLabel =
+    activeTab === 'realtime' ? 'real-time' :
+    activeTab === 'post-processing' ? 'post-proc' :
+    (SECONDARY_VIEWS.find((v) => v.value === activeTab)?.label.toLowerCase() ?? activeTab);
+
+  const cell = { fontFamily: MONO, fontSize: 10.5 } as const;
+  const q = rtStatus ? QUALITY[rtStatus.quality] : undefined;
+  const sat = rtStatus
+    ? (rtStatus.satsVisible > 0 ? `${rtStatus.ns}/${rtStatus.satsVisible}` : `${rtStatus.ns}`)
+    : '—/—';
+
+  return (
+    <Group
+      h="100%"
+      px="md"
+      gap={18}
+      wrap="nowrap"
+      style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--mantine-color-dimmed)', overflow: 'hidden' }}
+    >
+      {rtStatus ? (
+        <Text span style={{ ...cell, color: q?.color ?? 'var(--mantine-color-dimmed)', fontWeight: 600 }}>
+          ● {q?.label ?? `Q${rtStatus.quality}`}
+        </Text>
+      ) : (
+        <Text span style={{ ...cell, color: 'var(--color-single)' }}>● —</Text>
+      )}
+      <Text span style={cell}>Sat {sat}</Text>
+      <Text span style={cell}>ratio {rtStatus ? rtStatus.ratio.toFixed(1) : '—'}</Text>
+      <Text span style={cell}>age {rtStatus ? `${rtStatus.age.toFixed(1)}s` : '—'}</Text>
+      <Text span style={cell}>mode: {modeLabel}</Text>
+      {mrtkVersion && (
+        <Text span visibleFrom="md" style={cell}>MRTKLIB {mrtkVersion}</Text>
+      )}
+      <Text span ml="auto" style={{ ...cell, whiteSpace: 'nowrap' }}>
+        {rtStatus
+          ? `N ${rtStatus.lat.toFixed(5)}  E ${rtStatus.lon.toFixed(5)}  H ${rtStatus.height.toFixed(1)} m`
+          : 'N —  E —  H — m'}
+      </Text>
+    </Group>
+  );
+}
+
 function App() {
-  const [activeTab, setActiveTab] = useState<string | null>('stream-server');
+  const [activeTab, setActiveTab] = useState<string | null>('realtime');
+  const [configOpen, setConfigOpen] = useState(true);
+  const toggleConfig = useCallback(() => setConfigOpen((o) => !o), []);
+  const [rtStatus, setRtStatus] = useState<RtLiveStatus | null>(null);
+  const handleRtStatus = useCallback((s: RtLiveStatus | null) => setRtStatus(s), []);
   const [healthStatus, setHealthStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [mrtkVersion, setMrtkVersion] = useState<string>('');
   const [selectedTool, setSelectedTool] = useState('time-converter');
@@ -1298,39 +1379,51 @@ function App() {
       });
   }, []);
 
+  // Header navigation state (console redesign Phase 2)
+  const isPrimaryMode = activeTab === 'realtime' || activeTab === 'post-processing';
+  const primaryMode = isPrimaryMode ? (activeTab as string) : '';
+
   return (
-    <AppShell header={{ height: 60 }} padding="md">
+    <AppShell header={{ height: 52 }} footer={{ height: 30 }} padding="md">
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          {/* Logo & Title */}
-          <Group gap="sm">
-            <IconSatellite size={28} />
-            <Stack gap={0}>
-              <Title order={4} visibleFrom="sm">MRTKLIB Web UI</Title>
-              {mrtkVersion && (
-                <Text size="xs" c="dimmed" visibleFrom="md">MRTKLIB {mrtkVersion}</Text>
-              )}
-            </Stack>
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          {/* Brand + primary mode switch */}
+          <Group gap="md" wrap="nowrap">
+            <Group gap={9} wrap="nowrap">
+              <IconSatellite size={22} />
+              <Text fw={600} size="sm" visibleFrom="sm" style={{ whiteSpace: 'nowrap' }}>
+                MRTKLIB Console
+              </Text>
+            </Group>
+            <SegmentedControl
+              size="xs"
+              visibleFrom="sm"
+              value={primaryMode}
+              onChange={setActiveTab}
+              data={PRIMARY_MODES as unknown as { value: string; label: string }[]}
+              styles={{ label: { fontWeight: 600, paddingLeft: 15, paddingRight: 15 } }}
+            />
           </Group>
 
-          {/* Tabs - Center */}
-          <Tabs
-            value={activeTab}
-            onChange={setActiveTab}
-            variant="pills"
-            visibleFrom="sm"
-          >
-            <Tabs.List>
-              <Tabs.Tab value="post-processing">Post Processing</Tabs.Tab>
-              <Tabs.Tab value="realtime">Real-Time</Tabs.Tab>
-              <Tabs.Tab value="stream-server">Stream Server</Tabs.Tab>
-              <Tabs.Tab value="conversion">Conversion</Tabs.Tab>
-              <Tabs.Tab value="tools">Tools</Tabs.Tab>
-            </Tabs.List>
-          </Tabs>
-
-          {/* Right Controls */}
-          <Group gap="sm">
+          {/* Secondary views (flat, right-aligned) + status + theme */}
+          <Group gap="sm" wrap="nowrap">
+            <Group gap={2} wrap="nowrap" visibleFrom="sm">
+              {SECONDARY_VIEWS.map((v) => {
+                const active = activeTab === v.value;
+                return (
+                  <Button
+                    key={v.value}
+                    size="xs"
+                    variant={active ? 'light' : 'subtle'}
+                    color={active ? 'blue' : 'gray'}
+                    onClick={() => setActiveTab(v.value)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {v.label}
+                  </Button>
+                );
+              })}
+            </Group>
             <Badge
               color={healthStatus === 'ok' ? 'green' : healthStatus === 'error' ? 'red' : 'gray'}
               variant="dot"
@@ -1364,10 +1457,10 @@ function App() {
 
         {/* Tab Content - keep all panels mounted to preserve state */}
         <div style={{ display: activeTab === 'post-processing' ? undefined : 'none' }}>
-          <PostProcessingPanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} />
+          <PostProcessingPanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} />
         </div>
         <div style={{ display: activeTab === 'realtime' ? undefined : 'none' }}>
-          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} />
+          <RealTimePanel aiConfigured={aiConfigured} onNavigateToAiSettings={() => { setActiveTab('tools'); setSelectedTool('ai-settings'); }} configOpen={configOpen} onToggleConfig={toggleConfig} onLiveStatus={handleRtStatus} />
         </div>
         <div style={{ display: activeTab === 'stream-server' ? undefined : 'none' }}>
           <StreamServerWithCLAS />
@@ -1386,6 +1479,10 @@ function App() {
           </div>
         </div>
       </AppShell.Main>
+
+      <AppShell.Footer>
+        <StatusBar activeTab={activeTab ?? ''} mrtkVersion={mrtkVersion} rtStatus={rtStatus} />
+      </AppShell.Footer>
     </AppShell>
   );
 }

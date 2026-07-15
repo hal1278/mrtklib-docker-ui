@@ -25,9 +25,8 @@ class ReceiverPreset:
     model: str
     # Format tag passed to `mrtk relay` for the SBF input stream.
     relay_input_format: str
-    # Default baud rates — users can override in the form.
+    # Default baud rate for the serial port — users can override in the form.
     default_input_baud: int
-    default_output_baud: int
     # Path to the bundled cssr2rtcm3 TOML config (passed via `-k`).
     # Holds the receiver-specific signal_remap plus paths to the bundled
     # CLAS grid/BLQ/ATX files. Without it cssr2rtcm3 has no grid network
@@ -44,7 +43,6 @@ class ReceiverPreset:
             "label": f"{self.vendor} {self.model}",
             "relay_input_format": self.relay_input_format,
             "default_input_baud": self.default_input_baud,
-            "default_output_baud": self.default_output_baud,
             "cssr2rtcm3_config_path": self.cssr2rtcm3_config_path,
             "notes": self.notes,
         }
@@ -57,12 +55,12 @@ _PRESETS: dict[str, ReceiverPreset] = {
         model="mosaic-G5",
         relay_input_format="sbf",
         default_input_baud=115200,
-        default_output_baud=115200,
         cssr2rtcm3_config_path="/opt/mrtklib/clas-presets/septentrio-mosaic-g5.toml",
         notes=(
-            "Configure the receiver to output SBF (incl. GAL L6) on the "
-            "input port and accept RTCM3 (MSM4/MSM5/1005/1006) on the output "
-            "port. Verified end-to-end with the v0.6.5 reference setup."
+            "Configure the receiver to output SBF (incl. GAL L6) and accept "
+            "RTCM3 (MSM4/MSM5/1005/1006) on the same serial port — the relay "
+            "runs bidirectionally, so one port carries both directions. "
+            "Verified end-to-end with the v0.6.5 reference setup."
         ),
     ),
 }
