@@ -11,7 +11,6 @@ export interface ReceiverPreset {
   label: string;
   relay_input_format: string;
   default_input_baud: number;
-  default_output_baud: number;
   notes: string;
 }
 
@@ -33,8 +32,6 @@ export interface PipelineStartRequest {
   receiver_id: string;
   input_device: string;
   input_baud: number;
-  output_device: string;
-  output_baud: number;
   bridge_port?: number;
   sbf_record_path?: string | null;
 }

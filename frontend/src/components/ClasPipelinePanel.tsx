@@ -80,9 +80,7 @@ export function ClasPipelinePanel() {
   // --- Form state ---
   const [receiverId, setReceiverId] = useState<string>('septentrio-mosaic-g5');
   const [inputDevice, setInputDevice] = useState<string>('');
-  const [outputDevice, setOutputDevice] = useState<string>('');
   const [inputBaud, setInputBaud] = useState<number>(115200);
-  const [outputBaud, setOutputBaud] = useState<number>(115200);
   const [bridgePort, setBridgePort] = useState<number>(9870);
   const [recordSbf, setRecordSbf] = useState<boolean>(false);
   const [sbfRecordPath, setSbfRecordPath] = useState<string>(
@@ -126,9 +124,6 @@ export function ClasPipelinePanel() {
         setSerialPorts(ports);
         if (ports.length > 0) {
           setInputDevice((cur) => cur || ports[0].path);
-          if (ports.length > 1) {
-            setOutputDevice((cur) => cur || ports[1].path);
-          }
         }
       } catch {
         setSerialPorts([]);
@@ -148,7 +143,6 @@ export function ClasPipelinePanel() {
     const preset = receivers.find((r) => r.id === receiverId);
     if (preset) {
       setInputBaud(preset.default_input_baud);
-      setOutputBaud(preset.default_output_baud);
     }
   }, [receivers, receiverId]);
 
@@ -159,14 +153,13 @@ export function ClasPipelinePanel() {
       setSerialPorts(ports);
       if (ports.length > 0) {
         if (!inputDevice) setInputDevice(ports[0].path);
-        if (!outputDevice && ports.length > 1) setOutputDevice(ports[1].path);
       }
     } catch {
       setSerialPorts([]);
     } finally {
       setRefreshingPorts(false);
     }
-  }, [inputDevice, outputDevice]);
+  }, [inputDevice]);
 
   // --- WebSocket: receive logs, status, PVT, flow stats ---
   const handleMessage = useCallback((msg: LogMessage) => {
@@ -235,8 +228,6 @@ export function ClasPipelinePanel() {
         receiver_id: receiverId,
         input_device: inputDevice,
         input_baud: inputBaud,
-        output_device: outputDevice,
-        output_baud: outputBaud,
         bridge_port: bridgePort,
         sbf_record_path: recordSbf ? sbfRecordPath : null,
       });
@@ -271,7 +262,7 @@ export function ClasPipelinePanel() {
   // --- Derived values ---
   const isRunning =
     pipelineStatus.state === 'running' || pipelineStatus.state === 'starting';
-  const canStart = !isRunning && !!inputDevice && !!outputDevice && !submitting;
+  const canStart = !isRunning && !!inputDevice && !submitting;
   const portOptions = useMemo(
     () => serialPorts.map((p) => ({ value: p.path, label: p.label })),
     [serialPorts],
@@ -293,7 +284,9 @@ export function ClasPipelinePanel() {
             Wraps <Code>mrtk relay</Code> and <Code>mrtk cssr2rtcm3</Code> into
             a single workflow. Forward raw SBF (with the QZSS L6 CLAS message)
             from the receiver, decode it to RTCM3 with cssr2rtcm3, and send it
-            back so the receiver can run VRS-RTK on its own engine.
+            back so the receiver can run VRS-RTK on its own engine. The relay
+            runs bidirectionally (<Code>-b 1</Code>), so a single serial port
+            carries both the SBF uplink and the RTCM3 downlink.
           </Text>
 
           <Divider my={4} />
@@ -322,8 +315,8 @@ export function ClasPipelinePanel() {
 
           <Divider my={4} />
 
-          {/* Input device */}
-          <FormRow label="Input device">
+          {/* Serial port — single bidirectional port for SBF in / RTCM3 out */}
+          <FormRow label="Serial port">
             <Group gap="xs" wrap="nowrap" style={{ width: '100%' }}>
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Autocomplete
@@ -347,33 +340,11 @@ export function ClasPipelinePanel() {
               </ActionIcon>
             </Group>
           </FormRow>
-          <FormRow label="Input baud">
+          <FormRow label="Baud rate">
             <NumberInput
               size="sm"
               value={inputBaud}
               onChange={(v) => setInputBaud(typeof v === 'number' ? v : 115200)}
-              min={1200}
-              max={3000000}
-              disabled={isRunning}
-            />
-          </FormRow>
-
-          {/* Output device */}
-          <FormRow label="Output device">
-            <Autocomplete
-              size="sm"
-              value={outputDevice}
-              onChange={setOutputDevice}
-              data={portOptions}
-              placeholder="/dev/ttyUSB1"
-              disabled={isRunning}
-            />
-          </FormRow>
-          <FormRow label="Output baud">
-            <NumberInput
-              size="sm"
-              value={outputBaud}
-              onChange={(v) => setOutputBaud(typeof v === 'number' ? v : 115200)}
               min={1200}
               max={3000000}
               disabled={isRunning}
@@ -488,11 +459,9 @@ export function ClasPipelinePanel() {
               icon={<IconInfoCircle size={16} />}
             >
               <Text size="xs">
-                Make sure both serial devices are passed through to the
-                container (e.g. <Code>--device=/dev/ttyUSB0</Code> /
-                <Code> --device=/dev/ttyUSB1</Code>) and that the receiver is
-                configured to output SBF on the input port and accept RTCM3 on
-                the output port.
+                Make sure the serial device is passed through to the container
+                (e.g. <Code>--device=/dev/ttyUSB0</Code>) and that the receiver
+                is configured to output SBF and accept RTCM3 on that same port.
               </Text>
             </Alert>
           )}
