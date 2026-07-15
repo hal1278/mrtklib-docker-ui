@@ -60,6 +60,7 @@ import type {
   PositionType,
   StationPosition,
 } from '../types/mrtkPostConfig';
+import { validCorrections } from '../types/mrtkPostConfig';
 import { SnrMaskModal } from './SnrMaskModal';
 import { SignalSelectModal } from './SignalSelectModal';
 import { FileBrowserModal } from './FileBrowserModal';
@@ -339,17 +340,8 @@ const CORRECTION_OPTIONS: { value: CorrectionProvider; label: string }[] = [
   { value: 'qzs-clas', label: 'CLAS (QZSS L6D)' },
 ];
 
-// Providers valid per positioning mode (MRTKLIB hard-errors on invalid combos).
-const CORRECTION_BY_MODE: Partial<Record<PositioningMode, CorrectionProvider[]>> = {
-  'ppp-kinematic': ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
-  'ppp-static':    ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
-  'ppp-fixed':     ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
-  'ppp-rtk':       ['qzs-clas'],
-  'vrs-rtk':       ['qzs-clas'],
-};
-function validCorrections(mode: PositioningMode): CorrectionProvider[] {
-  return CORRECTION_BY_MODE[mode] ?? ['none'];
-}
+// Correction-provider validity matrix lives in types/mrtkPostConfig
+// (validCorrections / CORRECTION_BY_MODE) so import + UI share one source.
 
 // ─── Public interface ──────────────────────────────────────────────────────
 

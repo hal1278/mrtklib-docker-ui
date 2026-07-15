@@ -18,6 +18,30 @@ export type PositioningMode =
 export type CorrectionProvider =
   | 'none' | 'igs' | 'igs-rts' | 'qzs-madoca' | 'gal-has' | 'bds-b2b' | 'qzs-clas';
 
+// Correction providers valid per positioning mode. Mirrors the validity matrix
+// in MRTKLIB src/pos/mrtk_opt.c — MRTKLIB hard-errors on invalid combos
+// (e.g. "invalid correction=none for mode=ppp-rtk (use qzs-clas)"). Modes not
+// listed here (single/dgps/kinematic/static/moving-base/fixed) accept only 'none'.
+export const CORRECTION_BY_MODE: Partial<Record<PositioningMode, CorrectionProvider[]>> = {
+  'ppp-kinematic': ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-static':    ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-fixed':     ['igs', 'igs-rts', 'qzs-madoca', 'gal-has', 'bds-b2b'],
+  'ppp-rtk':       ['qzs-clas'],
+  'vrs-rtk':       ['qzs-clas'],
+};
+
+export function validCorrections(mode: PositioningMode): CorrectionProvider[] {
+  return CORRECTION_BY_MODE[mode] ?? ['none'];
+}
+
+// Coerce a correction provider to a value valid for the given mode, keeping it
+// unchanged when already valid. Used on import so invalid combos (from presets,
+// TOML import, or the config assistant) don't reach MRTKLIB and hard-error.
+export function coerceCorrection(mode: PositioningMode, correction: CorrectionProvider): CorrectionProvider {
+  const valid = validCorrections(mode);
+  return valid.includes(correction) ? correction : valid[0];
+}
+
 export type Frequency = 'l1' | 'l1+l2' | 'l1+l2+l5' | 'l1+l2+l5+l6' | 'l1+l2+l5+l6+l7';
 
 export type FilterType = 'forward' | 'backward' | 'combined';

@@ -4,7 +4,7 @@
  */
 
 import type { MrtkPostConfig } from '../types/mrtkPostConfig';
-import { DEFAULT_MRTK_POST_CONFIG } from '../types/mrtkPostConfig';
+import { DEFAULT_MRTK_POST_CONFIG, coerceCorrection } from '../types/mrtkPostConfig';
 
 type AnyDict = Record<string, unknown>;
 
@@ -128,11 +128,15 @@ export function tomlToConfig(toml: AnyDict): MrtkPostConfig {
       }
     : d.positioning.constellations;
 
+  const positioningMode = revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'];
+
   return {
     positioning: {
       ...d.positioning,
-      positioningMode: revMap(get(pos, 'mode', d.positioning.positioningMode), MODE_REV) as MrtkPostConfig['positioning']['positioningMode'],
-      correction: get(pos, 'correction', d.positioning.correction),
+      positioningMode,
+      // Coerce to a provider valid for the mode — MRTKLIB hard-errors on invalid
+      // combos (e.g. mode=ppp-rtk with correction=none).
+      correction: coerceCorrection(positioningMode, get(pos, 'correction', d.positioning.correction) as MrtkPostConfig['positioning']['correction']),
       frequency: revMap(get(pos, 'frequency', d.positioning.frequency), FREQ_REV) as MrtkPostConfig['positioning']['frequency'],
       signals: Array.isArray(pos.signals) ? (pos.signals as string[]).join(',') : get(pos, 'signals', d.positioning.signals),
       signalMode: pos.signals ? 'signals' : 'frequency',

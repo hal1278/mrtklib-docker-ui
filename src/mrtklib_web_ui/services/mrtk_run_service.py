@@ -260,6 +260,12 @@ class MrtkRunService:
             lines.append(f"path   = {_s(s.path)}")
             lines.append(f"format = {_s(s.format)}")
 
+        def _log_stream_section(section: str, s: StreamConfigModel):
+            # mrtk log streams (logstrN) accept only type/path — no format key.
+            lines.append(f"[{section}]")
+            lines.append(f"type   = {_s(s.type)}")
+            lines.append(f"path   = {_s(s.path)}")
+
         def _base_stream_section(section: str, s: BaseStreamConfigModel):
             _stream_section(section, s)
             lines.append(f"nmeareq = {'true' if s.nmeareq else 'false'}")
@@ -277,11 +283,11 @@ class MrtkRunService:
         lines.append("")
         _stream_section("streams.output.stream2", streams.output_stream2)
         lines.append("")
-        _stream_section("streams.log.stream1", streams.log_stream1)
+        _log_stream_section("streams.log.stream1", streams.log_stream1)
         lines.append("")
-        _stream_section("streams.log.stream2", streams.log_stream2)
+        _log_stream_section("streams.log.stream2", streams.log_stream2)
         lines.append("")
-        _stream_section("streams.log.stream3", streams.log_stream3)
+        _log_stream_section("streams.log.stream3", streams.log_stream3)
         lines.append("")
 
         return "\n".join(lines)
