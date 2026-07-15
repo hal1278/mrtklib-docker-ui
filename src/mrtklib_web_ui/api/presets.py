@@ -68,6 +68,21 @@ def _bundled_path(mode: str, preset_id: str) -> Path | None:
     return path if path.exists() else None
 
 
+def _user_path(mode: str, preset_id: str) -> Path | None:
+    """Resolve a user preset id to a file inside the mode's presets dir.
+
+    Returns None if the id is malformed or would escape the dir (path
+    traversal). User ids are bare stems — no separators, no leading dot.
+    """
+    if not preset_id or "/" in preset_id or "\\" in preset_id or preset_id.startswith("."):
+        return None
+    d = _presets_dir(mode).resolve()
+    path = (d / f"{preset_id}.toml").resolve()
+    if d != path.parent:
+        return None
+    return path
+
+
 def _preset_name(path: Path, fallback_id: str) -> str:
     """Extract the display name from the leading `# Preset: ` comment."""
     name = fallback_id.replace("-", " ").title()
@@ -198,8 +213,8 @@ async def get_preset(mode: str, preset_id: str) -> dict[str, Any]:
         if path is None:
             raise HTTPException(status_code=404, detail="Preset not found")
     else:
-        path = _presets_dir(mode) / f"{preset_id}.toml"
-        if not path.exists():
+        path = _user_path(mode, preset_id)
+        if path is None or not path.exists():
             raise HTTPException(status_code=404, detail="Preset not found")
 
     try:
@@ -224,8 +239,8 @@ async def update_preset(mode: str, preset_id: str, body: PresetUpdateRequest) ->
             detail="Built-in presets are read-only; duplicate to edit.",
         )
     d = _presets_dir(mode)
-    path = d / f"{preset_id}.toml"
-    if not path.exists():
+    path = _user_path(mode, preset_id)
+    if path is None or not path.exists():
         raise HTTPException(status_code=404, detail="Preset not found")
 
     if body.name and body.config:
@@ -271,9 +286,8 @@ async def delete_preset(mode: str, preset_id: str) -> dict[str, str]:
             status_code=409,
             detail="Built-in presets are read-only; cannot delete.",
         )
-    d = _presets_dir(mode)
-    path = d / f"{preset_id}.toml"
-    if not path.exists():
+    path = _user_path(mode, preset_id)
+    if path is None or not path.exists():
         raise HTTPException(status_code=404, detail="Preset not found")
     path.unlink()
     return {"status": "deleted"}
